@@ -336,6 +336,14 @@
                 <span>Utilisateur</span>
                 <strong>{{ selectedConnection.user || '-' }}</strong>
               </div>
+              <div class="info-row ssh-command-row">
+                <span>Connexion SSH</span>
+                <strong>
+                  <button type="button" v-tooltip="'Copier la commande SSH'" @click="copySshCommand(selectedConnection)">
+                    <Icon icon="duplicate"/>
+                  </button>
+                </strong>
+              </div>
             </div>
 
             <aside class="actions-panel">
@@ -869,6 +877,65 @@ export default {
       ipcRenderer.send('clipboard:write-text', this.debugOutput)
 
       this.notify('Debug output copied to clipboard')
+    },
+
+    copySshCommand (conn) {
+      ipcRenderer.send('clipboard:write-text', this.getSshCommand(conn))
+
+      this.notify('SSH command copied to clipboard')
+    },
+
+    getSshCommand (conn) {
+      const args = [
+        'ssh',
+        '-p',
+        String(conn.port || 22)
+      ]
+
+      if (this.isKeyAuthConnection(conn) && conn.keyFile) {
+        args.push('-i', conn.keyFile)
+      }
+
+      if (conn.authType === 'interactive') {
+        args.push(
+          '-o',
+          'PreferredAuthentications=keyboard-interactive',
+          '-o',
+          'PasswordAuthentication=no'
+        )
+      }
+
+      if (conn.authType === 'key-file-interactive' || conn.authType === 'key-file-passphrase-interactive') {
+        args.push(
+          '-o',
+          'PreferredAuthentications=publickey,keyboard-interactive',
+          '-o',
+          'PasswordAuthentication=no'
+        )
+      }
+
+      args.push(`${conn.user || ''}@${conn.host || ''}`)
+
+      return args.map(this.shellQuote).join(' ')
+    },
+
+    isKeyAuthConnection (conn) {
+      return [
+        'key-file',
+        'key-file-passphrase',
+        'key-file-interactive',
+        'key-file-passphrase-interactive'
+      ].includes(conn.authType)
+    },
+
+    shellQuote (value) {
+      const text = String(value)
+
+      if (/^[A-Za-z0-9_@%+=:,./-]+$/.test(text)) {
+        return text
+      }
+
+      return `"${text.replace(/(["\\$`])/g, '\\$1')}"`
     },
 
     updateConnectionList () {
@@ -2005,6 +2072,35 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.ssh-command-row strong {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ssh-command-row button {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  color: var(--app-muted);
+  background: color-mix(in srgb, var(--app-text) 8%, transparent);
+  cursor: pointer;
+}
+
+.ssh-command-row button:hover {
+  color: #ffffff;
+  background: var(--app-primary);
+}
+
+.ssh-command-row button svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
 }
 
 .actions-panel {
