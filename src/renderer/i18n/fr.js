@@ -82,6 +82,11 @@ export default {
     language: 'Langue',
     languageFr: 'Français',
     languageEn: 'English',
+    passkeyRetention: 'Rétention passkey',
+    passkeyAlways: 'Toujours demander',
+    passkey1h: '1 heure',
+    passkey12h: '12 heures',
+    passkey2d: '2 jours',
     startupWithOS: 'Démarrer avec Windows',
     displayTrayMessageOnClose: 'Message tray à la fermeture',
     showDebugPanel: 'Afficher le panneau debug',
@@ -166,8 +171,19 @@ export default {
     pamTitle: 'PAM/OTP pour {user}@{host}',
     title: '{label} pour {user}@{host}'
   },
+  passkeyPrompt: {
+    createTitle: 'Créer la passkey globale',
+    unlockTitle: 'Déverrouiller les secrets',
+    createDescription: 'Cette passkey chiffre les mots de passe stockés dans le JSON. Elle ne sera pas enregistrée. Note-la bien : sans elle, les secrets chiffrés seront irrécupérables.',
+    unlockDescription: 'Saisis la passkey globale pour déchiffrer temporairement les mots de passe nécessaires à la connexion.',
+    passkey: 'Passkey',
+    confirmPasskey: 'Confirmer la passkey',
+    emptyError: 'La passkey ne peut pas être vide.',
+    mismatchError: 'Les deux passkeys ne correspondent pas.'
+  },
   notifications: {
     cannotConnect: 'Impossible de se connecter à "{name}" : {error}',
+    passkeyInvalid: 'Passkey invalide : impossible de déchiffrer le mot de passe.',
     trayStillRunning: 'Le programme continue de tourner dans la zone de notification',
     debugCopied: 'Logs copiés dans le presse-papiers',
     sshCommandCopied: 'Commande SSH copiée dans le presse-papiers',

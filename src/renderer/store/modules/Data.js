@@ -73,6 +73,10 @@ const mutations = {
       if (typeof conn.iconDataUrl !== 'string') {
         conn.iconDataUrl = null
       }
+
+      if (!conn.secrets) {
+        conn.secrets = {}
+      }
     })
   }
 }

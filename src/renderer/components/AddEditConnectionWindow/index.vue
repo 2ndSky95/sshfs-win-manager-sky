@@ -127,6 +127,7 @@ import Tab from '@/components/Tabs/Tab.vue'
 import SwitchLabel from '@/components/SwitchLabel.vue'
 import CustomCmdlOptions from './CustomCmdlOptions.vue'
 import Icon from '../Icon.vue'
+import SecretManager from '@/SecretManager.js'
 
 export default {
   name: 'add-edit-connection-window',
@@ -145,9 +146,13 @@ export default {
       ipcRenderer.send('window:close-current')
     },
 
-    save () {
+    async save () {
       this.conn.advanced.customCmdlOptions =
         this.conn.advanced.customCmdlOptions.filter(a => a.name !== '')
+
+      if (!await this.prepareSecretsBeforeSave()) {
+        return
+      }
 
       if (this.isEditingMode) {
         this.$store.dispatch('UPDATE_CONNECTION', this.conn)
@@ -169,6 +174,62 @@ export default {
       if (file) {
         this.conn.keyFile = file
       }
+    },
+
+    hasExistingEncryptedSecrets () {
+      return this.$store.state.Data.connections.some(conn => conn.secrets && conn.secrets.password)
+    },
+
+    getFirstEncryptedPassword () {
+      const conn = this.$store.state.Data.connections.find(conn => conn.secrets && conn.secrets.password)
+
+      return conn && conn.secrets.password
+    },
+
+    async prepareSecretsBeforeSave () {
+      this.conn.secrets = this.conn.secrets || {}
+
+      if (this.conn.authType !== 'password') {
+        delete this.conn.secrets.password
+        this.conn.password = ''
+        return true
+      }
+
+      if (!this.conn.password) {
+        return true
+      }
+
+      const existingSecret = this.getFirstEncryptedPassword()
+
+      if (existingSecret) {
+        const activePasskey = await SecretManager.getPasskey(this.$store.state.Settings.settings, 'unlock')
+
+        if (!activePasskey) {
+          return false
+        }
+
+        try {
+          SecretManager.decryptWithPasskey(existingSecret, activePasskey)
+        } catch {
+          SecretManager.lock()
+          window.alert(this.$t('notifications.passkeyInvalid'))
+          return false
+        }
+
+        this.conn.secrets.password = SecretManager.encryptWithPasskey(this.conn.password, activePasskey)
+        this.conn.password = ''
+        return true
+      }
+
+      const encrypted = await SecretManager.encryptSecret(this.conn.password, this.$store.state.Settings.settings, 'create')
+
+      if (!encrypted) {
+        return false
+      }
+
+      this.conn.secrets.password = encrypted
+      this.conn.password = ''
+      return true
     }
   },
 
@@ -188,6 +249,7 @@ export default {
         folder: '/',
         authType: 'password',
         password: '',
+        secrets: {},
         keyFile: process.env.USERPROFILE + '\\.ssh\\id_rsa',
         key: '',
         mountPoint: 'auto',
@@ -209,7 +271,9 @@ export default {
 
       this.title = this.$t('connectionForm.editTitle')
 
-      this.conn = this.$store.state.Data.connections.find(a => a.uuid === this.$route.params.uuid)
+      this.conn = JSON.parse(JSON.stringify(this.$store.state.Data.connections.find(a => a.uuid === this.$route.params.uuid)))
+      this.conn.password = ''
+      this.conn.secrets = this.conn.secrets || {}
     }
   }
 }

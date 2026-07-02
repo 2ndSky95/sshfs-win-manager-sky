@@ -212,6 +212,16 @@
               </select>
             </label>
 
+            <label class="field compact">
+              <span>{{ $t('settings.passkeyRetention') }}</span>
+              <select v-model="settingsForm.passkeyRetention">
+                <option value="always">{{ $t('settings.passkeyAlways') }}</option>
+                <option value="1h">{{ $t('settings.passkey1h') }}</option>
+                <option value="12h">{{ $t('settings.passkey12h') }}</option>
+                <option value="2d">{{ $t('settings.passkey2d') }}</option>
+              </select>
+            </label>
+
             <div class="toggle-list">
               <label class="settings-toggle">
                 <input v-model="settingsForm.startupWithOS" type="checkbox">
@@ -466,6 +476,7 @@ import { ipcRenderer } from 'electron'
 import { v4 as uuid } from 'uuid'
 
 import ProcessManager from '@/ProcessManager.js'
+import SecretManager from '@/SecretManager.js'
 import { setLocale } from '@/i18n/index.js'
 import { defaultLocale, normalizeLocale, supportedLocaleOptions } from '@/i18n/locales.js'
 
@@ -480,6 +491,7 @@ const defaultSettings = {
   showDebugPanel: false,
   compactMode: false,
   demoMode: false,
+  passkeyRetention: '12h',
   theme: 'dark-graphite',
   language: defaultLocale
 }
@@ -538,6 +550,7 @@ function normalizeSettings (settings = {}) {
     showDebugPanel: typeof settings.showDebugPanel === 'boolean' ? settings.showDebugPanel : defaultSettings.showDebugPanel,
     compactMode: typeof settings.compactMode === 'boolean' ? settings.compactMode : defaultSettings.compactMode,
     demoMode: typeof settings.demoMode === 'boolean' ? settings.demoMode : defaultSettings.demoMode,
+    passkeyRetention: settings.passkeyRetention || defaultSettings.passkeyRetention,
     theme: settings.theme || defaultSettings.theme,
     language: normalizeLocale(settings.language)
   }
@@ -914,6 +927,146 @@ export default {
       this.listMode = this.listMode === 'edit' ? 'none' : 'edit'
     },
 
+    async prepareConnectionForConnect (conn) {
+      if (conn.authType !== 'password') {
+        return conn
+      }
+
+      if (conn.secrets && conn.secrets.password) {
+        try {
+          const password = await SecretManager.decryptSecret(conn.secrets.password, this.appSettings)
+
+          return password === null
+            ? null
+            : { ...conn, password }
+        } catch {
+          SecretManager.lock()
+          this.notify(this.$t('notifications.passkeyInvalid'), 'error-icon')
+          return null
+        }
+      }
+
+      if (!conn.password) {
+        const password = await this.requestConnectionPassword(conn)
+
+        if (!password) {
+          return null
+        }
+
+        const activePasskey = await SecretManager.getPasskey(this.appSettings, this.getFirstEncryptedPassword() ? 'unlock' : 'create')
+
+        if (!activePasskey) {
+          return null
+        }
+
+        const encrypted = SecretManager.encryptWithPasskey(password, activePasskey)
+
+        this.$store.dispatch('UPDATE_CONNECTION', {
+          ...conn,
+          password: '',
+          secrets: {
+            ...(conn.secrets || {}),
+            password: encrypted
+          }
+        })
+
+        return { ...conn, password }
+      }
+
+      return conn
+    },
+
+    requestConnectionPassword (conn) {
+      return new Promise(resolve => {
+        ipcRenderer.once('password-prompt:response', (event, data) => {
+          switch (data.message) {
+            case 'connection-password':
+              resolve(data.password)
+              break
+
+            case 'connection-password-cancel':
+            default:
+              resolve(null)
+              break
+          }
+        })
+
+        ipcRenderer.invoke('window:open', {
+          name: 'password-prompt-window',
+          route: `#/password-prompt/${conn.uuid}`,
+          options: {
+            height: 210,
+            width: 350,
+            useContentSize: true,
+            frame: false,
+            maximizable: false,
+            minimizable: false,
+            resizable: false,
+            modal: true
+          }
+        })
+      })
+    },
+
+    async migratePlainTextPasswords () {
+      const plainPasswordConnections = this.$store.state.Data.connections.filter(conn => conn.authType === 'password' && conn.password)
+      const existingEncryptedSecret = this.getFirstEncryptedPassword()
+
+      if (!plainPasswordConnections.length) {
+        return
+      }
+
+      const activePasskey = await SecretManager.getPasskey(this.appSettings, existingEncryptedSecret ? 'unlock' : 'create')
+
+      if (!activePasskey) {
+        return
+      }
+
+      if (existingEncryptedSecret) {
+        try {
+          SecretManager.decryptWithPasskey(existingEncryptedSecret, activePasskey)
+        } catch {
+          SecretManager.lock()
+          this.notify(this.$t('notifications.passkeyInvalid'), 'error-icon')
+          return
+        }
+      }
+
+      for (const conn of plainPasswordConnections) {
+        const encrypted = SecretManager.encryptWithPasskey(conn.password, activePasskey)
+
+        this.$store.dispatch('UPDATE_CONNECTION', {
+          ...conn,
+          password: '',
+          secrets: {
+            ...(conn.secrets || {}),
+            password: encrypted
+          }
+        })
+      }
+    },
+
+    getFirstEncryptedPassword () {
+      const conn = this.$store.state.Data.connections.find(conn => conn.secrets && conn.secrets.password)
+
+      return conn && conn.secrets.password
+    },
+
+    async unlockEncryptedSecretsAtStartup () {
+      const existingEncryptedSecret = this.getFirstEncryptedPassword()
+
+      if (!existingEncryptedSecret || SecretManager.isUnlocked()) {
+        return
+      }
+
+      try {
+        await SecretManager.decryptSecret(existingEncryptedSecret, this.appSettings)
+      } catch {
+        SecretManager.lock()
+        this.notify(this.$t('notifications.passkeyInvalid'), 'error-icon')
+      }
+    },
+
     connect (conn) {
       if (this.appSettings.demoMode && conn.demo) {
         conn.status = 'connected'
@@ -922,7 +1075,14 @@ export default {
         return Promise.resolve()
       }
 
-      return new Promise(resolve => {
+      return new Promise(async resolve => {
+        const connToConnect = await this.prepareConnectionForConnect(conn)
+
+        if (!connToConnect) {
+          resolve()
+          return
+        }
+
         this.$store.dispatch('UPDATE_CONNECTION_STATUS', {
           uuid: conn.uuid,
           status: 'connecting'
@@ -989,7 +1149,7 @@ export default {
             }
           })
         } else {
-          connect(conn)
+          connect(connToConnect)
         }
       })
     },
@@ -1399,6 +1559,10 @@ export default {
 
   mounted () {
     this.settingsForm = normalizeSettings(this.appSettings)
+    setTimeout(async () => {
+      await this.migratePlainTextPasswords()
+      await this.unlockEncryptedSecretsAtStartup()
+    }, 600)
 
     ipcRenderer.invoke('app:get-version').then(version => {
       this.appVersion = version

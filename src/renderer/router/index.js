@@ -4,6 +4,7 @@ import MainWindow from '@/components/MainWindow/index.vue'
 import AddEditConnectionWindow from '@/components/AddEditConnectionWindow/index.vue'
 import SettingsWindow from '@/components/SettingsWindow/index.vue'
 import PasswordPromptWindow from '@/components/PasswordPromptWindow/index.vue'
+import PasskeyPromptWindow from '@/components/PasskeyPromptWindow/index.vue'
 
 export default createRouter({
   history: createWebHashHistory(),
@@ -32,6 +33,11 @@ export default createRouter({
       path: '/password-prompt/:uuid',
       name: 'password-prompt',
       component: PasswordPromptWindow
+    },
+    {
+      path: '/passkey-prompt/:mode/:requestId',
+      name: 'passkey-prompt',
+      component: PasskeyPromptWindow
     },
     {
       path: '/:pathMatch(.*)*',

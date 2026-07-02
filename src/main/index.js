@@ -20,6 +20,10 @@ const staticPath = app.isPackaged
   ? path.join(process.resourcesPath, 'static')
   : path.join(__dirname, '../../static')
 
+function getAppIconPath () {
+  return path.join(staticPath, 'app-icon.ico')
+}
+
 function getLegacyConfigCandidates () {
   const appDataPath = app.getPath('appData')
 
@@ -81,6 +85,7 @@ function getWindowUrl (route = '') {
 function createAppWindow (name, route, options) {
   const win = new BrowserWindow({
     ...options,
+    icon: options.icon || getAppIconPath(),
     webPreferences: {
       ...legacyRendererWebPreferences,
       ...(options.webPreferences || {})
@@ -288,6 +293,13 @@ ipcMain.on('password-prompt:response', (event, data) => {
   if (mainWindow) {
     mainWindow.webContents.send('password-prompt:response', data)
   }
+})
+ipcMain.on('passkey-prompt:response', (event, data) => {
+  windows.forEach(win => {
+    if (!win.isDestroyed()) {
+      win.webContents.send('passkey-prompt:response', data)
+    }
+  })
 })
 
 if (isSecondInstance) {

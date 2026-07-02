@@ -8,6 +8,7 @@ const defaultSettings = {
   showDebugPanel: false,
   compactMode: false,
   demoMode: false,
+  passkeyRetention: '12h',
   theme: 'dark-graphite',
   language: defaultLocale
 }
@@ -23,6 +24,7 @@ function normalizeSettings (settings = {}) {
     showDebugPanel: typeof settings.showDebugPanel === 'boolean' ? settings.showDebugPanel : defaultSettings.showDebugPanel,
     compactMode: typeof settings.compactMode === 'boolean' ? settings.compactMode : defaultSettings.compactMode,
     demoMode: typeof settings.demoMode === 'boolean' ? settings.demoMode : defaultSettings.demoMode,
+    passkeyRetention: settings.passkeyRetention || defaultSettings.passkeyRetention,
     theme: settings.theme || defaultSettings.theme,
     language: normalizeLocale(settings.language)
   }

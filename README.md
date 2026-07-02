@@ -51,7 +51,23 @@ Le logiciel prend en charge plusieurs modes selon la configuration du serveur SS
 
 Les modes PAM/OTP utilisent `keyboard-interactive` et peuvent servir avec des configurations PAM, TOTP, OTP, Radius ou MFA. Les secrets saisis dans les popups de connexion ne sont pas enregistrés dans la configuration.
 
-Note : le mode `Password` stocke le mot de passe dans le fichier de configuration local. Pour éviter cela, utilisez plutôt `Password (ask on connect)` ou un mode par clé.
+## Sécurisation des mots de passe
+
+Les mots de passe enregistrés ne sont plus stockés en clair dans la configuration.
+
+SSHFS-Win Manager Evo utilise une **passkey globale** au logiciel pour chiffrer les secrets directement dans le JSON de configuration. Cela permet de conserver un fichier exportable/importable tout en évitant de laisser les mots de passe lisibles.
+
+Fonctionnement :
+
+- Les mots de passe sont chiffrés avec `AES-256-GCM`.
+- La clé de chiffrement est dérivée de la passkey globale avec `scrypt`.
+- La passkey n'est pas enregistrée.
+- À l'ouverture, si des secrets chiffrés sont détectés, l'application demande la passkey.
+- La passkey peut être gardée en mémoire temporairement selon le réglage choisi : toujours demander, 1 heure, 12 heures ou 2 jours.
+- Si une connexion en mode `Password` n'a pas encore de mot de passe chiffré, l'application le demande à la connexion puis le chiffre pour les prochaines utilisations.
+- Les anciens mots de passe en clair sont migrés automatiquement vers le format chiffré.
+
+Important : si la passkey est perdue, les mots de passe chiffrés ne peuvent pas être récupérés. Les connexions restent présentes, mais les secrets devront être ressaisis.
 
 ## Prérequis
 

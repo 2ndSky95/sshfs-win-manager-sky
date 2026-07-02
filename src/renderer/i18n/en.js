@@ -82,6 +82,11 @@ export default {
     language: 'Language',
     languageFr: 'Français',
     languageEn: 'English',
+    passkeyRetention: 'Passkey retention',
+    passkeyAlways: 'Always ask',
+    passkey1h: '1 hour',
+    passkey12h: '12 hours',
+    passkey2d: '2 days',
     startupWithOS: 'Start with Windows',
     displayTrayMessageOnClose: 'Tray message on close',
     showDebugPanel: 'Show debug panel',
@@ -166,8 +171,19 @@ export default {
     pamTitle: 'PAM/OTP for {user}@{host}',
     title: '{label} for {user}@{host}'
   },
+  passkeyPrompt: {
+    createTitle: 'Create global passkey',
+    unlockTitle: 'Unlock secrets',
+    createDescription: 'This passkey encrypts passwords stored in the JSON file. It will not be saved. Keep it safe: encrypted secrets cannot be recovered without it.',
+    unlockDescription: 'Enter the global passkey to temporarily decrypt passwords required for connections.',
+    passkey: 'Passkey',
+    confirmPasskey: 'Confirm passkey',
+    emptyError: 'The passkey cannot be empty.',
+    mismatchError: 'The passkeys do not match.'
+  },
   notifications: {
     cannotConnect: 'Can’t connect to "{name}": {error}',
+    passkeyInvalid: 'Invalid passkey: could not decrypt the password.',
     trayStillRunning: 'Program still running in the system tray',
     debugCopied: 'Debug output copied to clipboard',
     sshCommandCopied: 'SSH command copied to clipboard',
