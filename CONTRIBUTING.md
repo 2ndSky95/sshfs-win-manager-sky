@@ -84,6 +84,12 @@ sshfs-win-manager-evo-setup-v1.3.1.exe
 
 Le nom exact depend de la version definie dans `package.json`.
 
+## Générer les icônes
+
+```text
+npm run icons:generate
+```
+
 ## Nettoyer les builds
 
 Pour nettoyer les fichiers generes par le build Electron/Vue :

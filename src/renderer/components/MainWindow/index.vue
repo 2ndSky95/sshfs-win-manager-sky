@@ -3,7 +3,7 @@
     <div class="main-shell" :class="{ 'nav-collapsed': navCollapsed }">
       <aside class="nav-rail">
         <div class="brand-mark">
-          <Icon icon="cloudDrive"/>
+          <Icon icon="sshfsLogo"/>
         </div>
 
         <button
@@ -16,7 +16,7 @@
         </button>
 
         <button class="nav-item" :class="{ active: activeSection === 'connections' }" type="button" @click="showConnections">
-          <Icon icon="cloudDrive"/>
+          <Icon icon="sshfsFolder"/>
           <span class="nav-label">{{ $t('nav.connections') }}</span>
         </button>
 
@@ -57,7 +57,7 @@
         </div>
 
         <div v-if="!hasConnections" class="empty-list">
-          <Icon icon="cloudDrive"/>
+          <Icon icon="sshfsFolder"/>
           <h1>{{ $t('list.emptyTitle') }}</h1>
           <p>{{ $t('list.emptyText') }}</p>
         </div>
@@ -77,7 +77,7 @@
           >
             <span class="connection-icon">
               <img v-if="conn.iconDataUrl" :src="conn.iconDataUrl" :alt="conn.name">
-              <Icon v-else icon="cloudDrive"/>
+              <Icon v-else icon="sshfsFolder"/>
             </span>
 
             <span class="connection-main">
@@ -266,7 +266,7 @@
             <span class="detail-icon-wrap">
               <button class="detail-icon" type="button" v-tooltip="$t('detail.changeIcon')" @click="selectConnectionIcon(selectedConnection)">
                 <img v-if="selectedConnection.iconDataUrl" :src="selectedConnection.iconDataUrl" :alt="selectedConnection.name">
-                <Icon v-else icon="cloudDrive"/>
+                <Icon v-else icon="sshfsFolder"/>
               </button>
               <button
                 v-if="selectedConnection.iconDataUrl"
@@ -401,13 +401,13 @@
         </div>
 
         <div v-else class="empty-detail">
-          <Icon icon="cloudDrive"/>
+          <Icon icon="sshfsFolder"/>
           <h1>{{ $t('detail.selectTitle') }}</h1>
           <p>{{ $t('detail.selectText') }}</p>
         </div>
 
         <div class="stats-bar">
-          <span><Icon icon="cloudDrive"/> {{ $t('detail.connectionsCount', { count: connections.length }) }}</span>
+          <span><Icon icon="sshfsFolder"/> {{ $t('detail.connectionsCount', { count: connections.length }) }}</span>
           <span class="success"><span class="status-dot"></span> {{ $t('detail.connectedCount', { count: connectedConnections.length }) }}</span>
           <span class="warning"><span class="status-dot"></span> {{ $t('detail.busyCount', { count: busyConnections.length }) }}</span>
         </div>
@@ -1253,7 +1253,7 @@ export default {
   width: 48px;
   height: 48px;
   margin: 0 auto 18px;
-  border-radius: 50%;
+  border-radius: 13px;
 }
 
 .brand-mark svg,
