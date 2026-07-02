@@ -1,69 +1,117 @@
 # SSHFS-Win Manager Evo
 
-## Introduction 
-SSHFS-Win Manager Evo is a GUI (graphics user interface) for SSHFS on Windows.
+Interface graphique Windows pour monter des dossiers distants via SSHFS-Win.
 
-This project is based on [SSHFS-Win Manager](https://github.com/evsar3/sshfs-win-manager) by Evandro Araujo.
+SSHFS-Win Manager Evo est un fork modernisé de [SSHFS-Win Manager](https://github.com/evsar3/sshfs-win-manager), créé à l'origine par Evandro Araujo. Cette édition ajoute une interface revue, de nouveaux modes d'authentification, des outils de gestion des connexions et plusieurs corrections adaptées aux versions récentes de Windows.
+
+## Fonctionnalités
+
+- Montage de dossiers distants SSH/SFTP en lecteur Windows via SSHFS-Win.
+- Gestion de plusieurs connexions avec favoris, recherche et tri.
+- Fiche détaillée par connexion avec statut, host, port, utilisateur, chemin distant et point de montage.
+- Icône personnalisable par connexion, affichée dans la liste et dans la fiche détail.
+- Copie rapide d'une commande `ssh` équivalente pour ouvrir la connexion dans un terminal.
+- Import/export JSON des connexions.
+- Mode debug intégré avec logs de connexion.
+- Démarrage avec Windows et fonctionnement dans la zone de notification.
+- Connexion automatique au démarrage, exécutée de façon séquentielle pour éviter les collisions.
+- Support IPv6 dans les cibles SSHFS.
+- Paramètres avancés SSHFS via options de ligne de commande personnalisées.
+
+## Modes d'authentification
+
+Le logiciel prend en charge plusieurs modes selon la configuration du serveur SSH :
+
+- `Private Key`
+- `Private Key + Passphrase`
+- `Private Key + PAM/OTP`
+- `Private Key + Passphrase + PAM/OTP`
+- `Password`
+- `Password (ask on connect)`
+- `PAM/OTP only (no key) [BETA]`
+
+Les modes PAM/OTP utilisent `keyboard-interactive` et peuvent servir avec des configurations PAM, TOTP, OTP, Radius ou MFA. Les secrets saisis dans les popups de connexion ne sont pas enregistrés dans la configuration.
+
+Note : le mode `Password` stocke le mot de passe dans le fichier de configuration local. Pour éviter cela, utilisez plutôt `Password (ask on connect)` ou un mode par clé.
+
+## Prérequis
+
+Avant d'utiliser l'application, installez :
+
+- [WinFsp](https://winfsp.dev/)
+- [SSHFS-Win](https://github.com/billziss-gh/sshfs-win)
+
+SSHFS-Win Manager Evo ne remplace pas SSHFS-Win : il fournit l'interface graphique et pilote `sshfs.exe`.
 
 ## Installation
-**Step 1**  
 
-Install SSHFS-Win on your Windows computer.  
-Follow their [installation instructions](https://github.com/billziss-gh/sshfs-win/blob/master/README.md) before continuing.  
+1. Installez WinFsp et SSHFS-Win.
+2. Installez ou compilez SSHFS-Win Manager Evo.
+3. Ajoutez une connexion.
+4. Choisissez une lettre de lecteur disponible.
+5. Cliquez sur `Connecter`.
 
-**Step 2**  
+## Développement
 
-Once SSHFS-Win is installed, build or install SSHFS-Win Manager Evo and add your connections.
+Installer les dépendances :
 
-**Step 3**  
+```powershell
+npm install
+```
 
-Add your connections and enjoy!
+Lancer en mode développement :
 
-## Features
+```powershell
+npm run dev
+```
 
-- Electron-based application. [Electron](https://github.com/electron/electron) is the same engine that powers [Visual Studio Code](https://github.com/microsoft/vscode), [Discord](https://discordapp.com/), [GitKraken](https://www.gitkraken.com/) and [many more](https://www.electronjs.org/apps).
+Lancer en mode développement avec démarrage dans le tray :
 
-- User-friendly and intuitive interface
+```powershell
+npm run dev:tray
+```
 
-- Multiple authentication methods: 
-  - Password<sup>1</sup>
-  - Private Key (without password)
-  - Ask for password
+Compiler un dossier exécutable sans installeur :
 
-- Startup with Windows
-- Close to system tray
-- Quick debug tool
-- Supports advanced command line params
-- Easily duplicate connections
-- Reorder connections
-- Connection debug log
+```powershell
+npm run build:dir
+```
 
-## Screenshots
-![Main Window](https://user-images.githubusercontent.com/1992754/179056109-a0df5872-f187-40b1-895c-9ef57abd5fe7.png)  
-*Main Window*
+Compiler l'installeur :
 
-![Add Connection](https://user-images.githubusercontent.com/1992754/179056126-0f767346-fe93-48fc-9ceb-3514b0b7b386.png)  
-*Add & edit connections*
+```powershell
+npm run build
+```
 
-![Open mounted drive](https://user-images.githubusercontent.com/1992754/179056142-3d368a65-f9c6-4232-86d6-bb8db6eff556.png)  
-*Explore mounted drive*
+Nettoyer les sorties de build :
 
-![System tray](https://user-images.githubusercontent.com/1992754/179056152-9a7088c4-f23a-4c0d-b70b-1ccf879897fb.png)  
-*Close to system tray*
+```powershell
+npm run build:clean
+```
 
-## Upstream project
-The original SSHFS-Win Manager repository is available at [evsar3/sshfs-win-manager](https://github.com/evsar3/sshfs-win-manager).
+## Notes importantes
 
-## Contributing
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development, test mode, and installer build commands.
+- Le montage automatique de lettre de lecteur n'est plus proposé : Windows et SSHFS-Win ne le gèrent plus de manière fiable dans les versions récentes.
+- Certaines authentifications interactives dépendent fortement de la configuration OpenSSH/PAM du serveur.
+- Pour les clés protégées par passphrase et les challenges PAM/OTP, l'application prépare les réponses avant de lancer SSHFS via `SSH_ASKPASS`.
+- Les images personnalisées de connexions sont stockées dans les données de configuration sous forme de data URL.
 
-## Notes
-<sup>1</sup> This software stores your password in a plain json file. If there is any concerns on storing your password that way, please use one of the other authentication methods. See issue #28
+## Projet original
 
-## License
+Ce projet est basé sur SSHFS-Win Manager :
+
+[https://github.com/evsar3/sshfs-win-manager](https://github.com/evsar3/sshfs-win-manager)
+
+Auteur original : Evandro Araujo.
+
+Édition Evo : Fabrice Simonet, [emulsion.io](https://emulsion.io).
+
+## Licence
+
 MIT License
 
-Copyright (c) 2020 Evandro Araújo
+Copyright (c) 2020 Evandro Araujo
+
 Modifications copyright (c) 2026 Fabrice Simonet
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
