@@ -86,9 +86,17 @@ Le nom exact depend de la version definie dans `package.json`.
 
 ## Générer les icônes
 
-```text
+```powershell
 npm run icons:generate
 ```
+
+La source principale du logo est `build/icons/sshfs-evo-logo.svg`.
+
+Le script génère :
+
+- les PNG dans `build/icons/`
+- les fichiers `.ico` utilisés par le build
+- les icônes utilisées à l'exécution dans `static/`
 
 ## Nettoyer les builds
 

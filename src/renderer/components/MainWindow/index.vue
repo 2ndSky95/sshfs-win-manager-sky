@@ -1,19 +1,10 @@
 <template>
   <Window title="SSHFS-Win Manager Evo" closeAction="hide" @close="showRunningInBackgroundNotification">
-    <div class="main-shell" :class="{ 'nav-collapsed': navCollapsed }">
+    <div class="main-shell" :class="{ 'compact-mode': appSettings.compactMode, 'detail-collapsed': isDetailPanelCollapsed }">
       <aside class="nav-rail">
         <div class="brand-mark">
           <Icon icon="sshfsLogo"/>
         </div>
-
-        <button
-          class="nav-collapse"
-          type="button"
-          :title="navCollapsed ? $t('nav.expand') : $t('nav.collapse')"
-          @click="navCollapsed = !navCollapsed"
-        >
-          <Icon icon="grip"/>
-        </button>
 
         <button class="nav-item" :class="{ active: activeSection === 'connections' }" type="button" @click="showConnections">
           <Icon icon="sshfsFolder"/>
@@ -43,13 +34,23 @@
       </aside>
 
       <section class="connection-panel">
-        <div class="panel-toolbar">
+        <div class="panel-toolbar" :class="{ 'has-edit-toggle': sortMode === 'manual' }">
           <label class="search-box">
             <Icon icon="info"/>
             <input v-model="searchText" type="search" :placeholder="$t('list.searchPlaceholder')">
           </label>
 
-          <select v-model="sortMode" class="sort-select">
+          <button
+            v-if="sortMode === 'manual'"
+            class="edit-toggle"
+            :class="{ active: isEditModeEnabled }"
+            type="button"
+            @click="listMode = isEditModeEnabled ? 'none' : 'edit'"
+          >
+            {{ isEditModeEnabled ? $t('list.editDone') : $t('list.editOrder') }}
+          </button>
+
+          <select v-model="sortMode" class="sort-select" @change="handleSortModeChange">
             <option value="name">A-Z</option>
             <option value="status">{{ $t('list.sortStatus') }}</option>
             <option value="manual">{{ $t('list.sortManual') }}</option>
@@ -82,15 +83,17 @@
 
             <span class="connection-main">
               <strong>{{ conn.name }}</strong>
-              <span class="connection-meta" :class="{ 'has-reorder': sortMode === 'manual' }">
+              <span class="connection-meta" :class="{ 'has-reorder': sortMode === 'manual' && isEditModeEnabled }">
                 <span>
                   <b>{{ mountPointLabel(conn) }}</b>
-                  {{ conn.host }}
-                  <i>&middot;</i>
-                  {{ conn.folder || '/' }}
+                  <span class="connection-target">
+                    {{ conn.host }}
+                    <i>&middot;</i>
+                    {{ conn.folder || '/' }}
+                  </span>
                 </span>
 
-                <span v-if="sortMode === 'manual'" class="reorder-actions">
+                <span v-if="sortMode === 'manual' && isEditModeEnabled" class="reorder-actions">
                   <button
                     type="button"
                     :disabled="!canMoveConnection(conn, -1)"
@@ -123,7 +126,7 @@
                   </button>
                   <button
                     type="button"
-                    class="round-action"
+                    class="round-action open-folder"
                     :disabled="conn.status !== 'connected'"
                     v-tooltip="$t('common.openFolder')"
                     @click.stop="openLocal(conn.mountPoint === 'auto' ? conn.preferredMountPoint : conn.mountPoint)"
@@ -157,7 +160,16 @@
         </div>
       </section>
 
-      <section class="detail-panel">
+      <section class="detail-panel" :class="{ collapsed: isDetailPanelCollapsed, 'can-collapse': canCollapseDetailPanel }">
+        <button
+          class="detail-collapse-handle"
+          type="button"
+          :title="isDetailPanelCollapsed ? $t('detail.expandPanel') : $t('detail.collapsePanel')"
+          @click="toggleDetailPanel"
+        >
+          {{ isDetailPanelCollapsed ? '›' : '‹' }}
+        </button>
+
         <div class="detail-topbar">
           <button class="btn primary-action" type="button" @click="addNewConnection">
             <Icon icon="plus"/>
@@ -187,7 +199,9 @@
             <label class="field">
               <span>{{ $t('settings.theme') }}</span>
               <select v-model="settingsForm.theme" @change="previewTheme(settingsForm.theme)">
-                <option v-for="theme in themes" :key="theme.value" :value="theme.value">{{ theme.label }}</option>
+                <optgroup v-for="group in themeGroups" :key="group.label" :label="group.label">
+                  <option v-for="theme in group.themes" :key="theme.value" :value="theme.value">{{ theme.label }}</option>
+                </optgroup>
               </select>
             </label>
 
@@ -214,6 +228,11 @@
                 <span class="switch-track"></span>
                 <span class="toggle-text">{{ $t('settings.showDebugPanel') }}</span>
               </label>
+              <label class="settings-toggle">
+                <input v-model="settingsForm.compactMode" type="checkbox">
+                <span class="switch-track"></span>
+                <span class="toggle-text">{{ $t('settings.compactMode') }}</span>
+              </label>
             </div>
 
             <div class="settings-actions">
@@ -225,13 +244,17 @@
                 <Icon icon="openFolder"/>
                 {{ $t('settings.importJson') }}
               </button>
+              <button class="action-button" type="button" @click="importLegacyConfiguration">
+                <Icon icon="duplicate"/>
+                {{ $t('settings.importLegacy') }}
+              </button>
+            </div>
+
+            <div class="settings-form-actions">
+              <button class="btn" type="button" @click="resetSettingsForm">{{ $t('common.cancel') }}</button>
+              <button class="btn primary-action" type="button" @click="saveSettings">{{ $t('common.save') }}</button>
             </div>
           </div>
-
-          <footer class="workspace-footer">
-            <button class="btn" type="button" @click="resetSettingsForm">{{ $t('common.cancel') }}</button>
-            <button class="btn primary-action" type="button" @click="saveSettings">{{ $t('common.save') }}</button>
-          </footer>
         </div>
 
         <div v-else-if="activeSection === 'about'" class="workspace-card about-workspace">
@@ -450,6 +473,7 @@ const defaultSettings = {
   displayTrayMessageOnClose: true,
   processTrackTimeout: 15,
   showDebugPanel: false,
+  compactMode: false,
   theme: 'dark-graphite',
   language: defaultLocale
 }
@@ -463,6 +487,7 @@ function normalizeSettings (settings = {}) {
     displayTrayMessageOnClose: typeof settings.displayTrayMessageOnClose === 'boolean' ? settings.displayTrayMessageOnClose : defaultSettings.displayTrayMessageOnClose,
     processTrackTimeout: Number(settings.processTrackTimeout) || defaultSettings.processTrackTimeout,
     showDebugPanel: typeof settings.showDebugPanel === 'boolean' ? settings.showDebugPanel : defaultSettings.showDebugPanel,
+    compactMode: typeof settings.compactMode === 'boolean' ? settings.compactMode : defaultSettings.compactMode,
     theme: settings.theme || defaultSettings.theme,
     language: normalizeLocale(settings.language)
   }
@@ -487,11 +512,83 @@ export default {
 
     showSettings () {
       this.activeSection = 'settings'
+      if (this.detailPanelCollapsed) {
+        this.detailPanelCollapsed = false
+        this.resizeForDetailPanel(false)
+      }
       this.settingsForm = normalizeSettings(this.appSettings)
     },
 
     showAbout () {
       this.activeSection = 'about'
+      if (this.detailPanelCollapsed) {
+        this.detailPanelCollapsed = false
+        this.resizeForDetailPanel(false)
+      }
+    },
+
+    toggleDetailPanel () {
+      const nextCollapsed = !this.detailPanelCollapsed
+      const layout = this.getMeasuredLayout()
+
+      if (nextCollapsed) {
+        this.detailPanelResizeDelta = Math.max(0, Math.round(layout.detailWidth - layout.collapsedDetailWidth))
+      }
+
+      this.detailPanelCollapsed = nextCollapsed
+      this.resizeForDetailPanel(nextCollapsed, this.detailPanelResizeDelta, this.getDetailPanelTargetWidth(nextCollapsed, layout))
+    },
+
+    resizeForDetailPanel (collapsed, delta = this.detailPanelResizeDelta, width = 0) {
+      ipcRenderer.send('main-window:set-detail-collapsed', {
+        collapsed,
+        delta,
+        width,
+        minWidth: collapsed ? Math.max(540, width) : 1100
+      })
+    },
+
+    getMeasuredLayout () {
+      const shell = this.$el
+      const shellStyle = window.getComputedStyle(shell)
+      const nav = shell.querySelector('.nav-rail')
+      const list = shell.querySelector('.connection-panel')
+      const detail = shell.querySelector('.detail-panel')
+      const shellPaddingLeft = parseFloat(shellStyle.paddingLeft) || 0
+      const shellPaddingRight = parseFloat(shellStyle.paddingRight) || 0
+      const gridGap = parseFloat(shellStyle.columnGap || shellStyle.gap) || 0
+      const navWidth = nav ? nav.getBoundingClientRect().width : 0
+      const listWidth = list ? list.getBoundingClientRect().width : 0
+      const detailWidth = detail ? detail.getBoundingClientRect().width : 0
+
+      return {
+        shellPadding: shellPaddingLeft + shellPaddingRight,
+        gridGap,
+        navWidth,
+        listWidth,
+        detailWidth,
+        collapsedDetailWidth: 10
+      }
+    },
+
+    getDetailPanelTargetWidth (collapsed, measuredLayout = this.getMeasuredLayout()) {
+      if (!collapsed) {
+        return 0
+      }
+
+      return Math.round(
+        measuredLayout.shellPadding +
+        (measuredLayout.gridGap * 2) +
+        measuredLayout.navWidth +
+        measuredLayout.listWidth +
+        measuredLayout.collapsedDetailWidth
+      )
+    },
+
+    handleSortModeChange () {
+      if (this.sortMode !== 'manual') {
+        this.listMode = 'none'
+      }
     },
 
     toggleFavorite (conn) {
@@ -599,6 +696,86 @@ export default {
       }
 
       this.$store.dispatch('IMPORT_CONNECTIONS', connections)
+    },
+
+    async importLegacyConfiguration () {
+      const result = await ipcRenderer.invoke('legacy-config:import')
+
+      if (!result.found) {
+        window.alert(this.$t('settings.legacyImportNotFound'))
+        return
+      }
+
+      if (result.error) {
+        window.alert(this.$t('settings.legacyImportReadFailed', { error: result.error }))
+        return
+      }
+
+      const connections = Array.isArray(result.connections) ? result.connections : []
+
+      if (!connections.length) {
+        window.alert(this.$t('settings.legacyImportEmpty'))
+        return
+      }
+
+      const hasPasswords = connections.some(conn => conn && conn.password)
+      const message = hasPasswords
+        ? this.$t('settings.legacyImportConfirmWithPasswords', { count: connections.length, filePath: result.filePath })
+        : this.$t('settings.legacyImportConfirm', { count: connections.length, filePath: result.filePath })
+
+      if (!window.confirm(message)) {
+        return
+      }
+
+      const importedConnections = this.prepareLegacyConnections(connections)
+      const mergedConnections = [
+        ...this.connections,
+        ...importedConnections
+      ]
+
+      this.$store.dispatch('IMPORT_CONNECTIONS', mergedConnections)
+      this.sortMode = 'manual'
+
+      if (importedConnections[0]) {
+        this.selectedConnectionUuid = importedConnections[0].uuid
+        this.activeSection = 'connections'
+      }
+
+      this.notify(this.$t('notifications.legacyImportDone', { count: importedConnections.length }))
+    },
+
+    prepareLegacyConnections (connections) {
+      const existingUuids = new Set(this.connections.map(conn => conn.uuid))
+
+      return connections.map(conn => {
+        const imported = JSON.parse(JSON.stringify(conn))
+
+        if (!imported.uuid || existingUuids.has(imported.uuid)) {
+          imported.uuid = uuid()
+        }
+
+        existingUuids.add(imported.uuid)
+
+        imported.status = 'disconnected'
+        imported.pid = 0
+        imported.favorite = typeof imported.favorite === 'boolean' ? imported.favorite : false
+        imported.iconDataUrl = typeof imported.iconDataUrl === 'string' ? imported.iconDataUrl : null
+        imported.preferredMountPoint = imported.preferredMountPoint || null
+        imported.mountPoint = imported.mountPoint || imported.preferredMountPoint || 'auto'
+        imported.advanced = {
+          customCmdlOptionsEnabled: false,
+          customCmdlOptions: [],
+          connectOnStartup: false,
+          reconnect: false,
+          ...(imported.advanced || {})
+        }
+
+        if (!imported.authType) {
+          imported.authType = imported.keyFile ? 'key-file' : 'password'
+        }
+
+        return imported
+      })
     },
 
     openExternal (url) {
@@ -973,7 +1150,7 @@ export default {
     },
 
     isEditModeEnabled () {
-      return this.listMode === 'edit' || this.sortMode === 'manual'
+      return this.sortMode === 'manual' && this.listMode === 'edit'
     },
 
     isDeleteModeEnabled () {
@@ -1018,7 +1195,7 @@ export default {
           disconnected: 3
         }
 
-        items = [...items].sort((a, b) => (weight[a.status] || 9) - (weight[b.status] || 9) || a.name.localeCompare(b.name))
+        items = [...items].sort((a, b) => (weight[a.status] ?? 9) - (weight[b.status] ?? 9) || a.name.localeCompare(b.name))
       }
 
       return items
@@ -1034,6 +1211,14 @@ export default {
 
     busyConnections () {
       return this.connections.filter(conn => conn.status === 'connecting' || conn.status === 'disconnecting')
+    },
+
+    canCollapseDetailPanel () {
+      return true
+    },
+
+    isDetailPanelCollapsed () {
+      return this.detailPanelCollapsed
     },
 
     appSettings () {
@@ -1054,26 +1239,61 @@ export default {
         }
       },
       immediate: true
+    },
+
+    'appSettings.compactMode' () {
+      if (this.detailPanelCollapsed) {
+        this.$nextTick(() => {
+          this.resizeForDetailPanel(true, 0, this.getDetailPanelTargetWidth(true))
+        })
+      }
     }
   },
 
   data () {
     return {
       activeSection: 'connections',
-      navCollapsed: false,
+      detailPanelCollapsed: false,
+      detailPanelResizeDelta: 0,
       listMode: 'none',
       sortMode: 'name',
       searchText: '',
       settingsForm: { ...defaultSettings },
-      themes: [
-        { value: 'dark-graphite', label: 'Graphite' },
-        { value: 'dark-midnight', label: 'Midnight' },
-        { value: 'dark-aurora', label: 'Aurora' },
-        { value: 'light-quartz', label: 'Quartz' },
-        { value: 'light-arctic', label: 'Arctic' },
-        { value: 'light-sage', label: 'Sage' },
-        { value: 'dark-classic', label: 'Classic dark' },
-        { value: 'light-neutral', label: 'Classic light' }
+      themeGroups: [
+        {
+          label: 'Dark',
+          themes: [
+            { value: 'dark-graphite', label: 'Graphite' },
+            { value: 'dark-midnight', label: 'Midnight' },
+            { value: 'dark-aurora', label: 'Aurora' },
+            { value: 'dark-github-desktop', label: 'GitHub Desktop' },
+            { value: 'dark-obsidian', label: 'Obsidian' },
+            { value: 'dark-slate', label: 'Slate blue' },
+            { value: 'dark-ember', label: 'Ember' },
+            { value: 'dark-forest', label: 'Forest night' },
+            { value: 'dark-steel', label: 'Steel' }
+          ]
+        },
+        {
+          label: 'Light',
+          themes: [
+            { value: 'light-quartz', label: 'Quartz' },
+            { value: 'light-arctic', label: 'Arctic' },
+            { value: 'light-sage', label: 'Sage' },
+            { value: 'light-pearl', label: 'Pearl' },
+            { value: 'light-sand', label: 'Sand' },
+            { value: 'light-rose', label: 'Rose' },
+            { value: 'light-lavender', label: 'Lavender' },
+            { value: 'light-cloud', label: 'Cloud' }
+          ]
+        },
+        {
+          label: 'Classic',
+          themes: [
+            { value: 'dark-classic', label: 'Classic dark' },
+            { value: 'light-neutral', label: 'Classic light' }
+          ]
+        }
       ],
       localeOptions: supportedLocaleOptions,
       selectedConnectionUuid: null,
@@ -1094,6 +1314,13 @@ export default {
     ipcRenderer.on('main-window:show-section', (event, section) => {
       if (['connections', 'favorites', 'settings', 'about'].includes(section)) {
         this.activeSection = section
+
+        if (section === 'settings' || section === 'about') {
+          if (this.detailPanelCollapsed) {
+            this.detailPanelCollapsed = false
+            this.resizeForDetailPanel(false)
+          }
+        }
       }
     })
 
@@ -1183,7 +1410,7 @@ export default {
   height: 100%;
   padding: 18px;
   display: grid;
-  grid-template-columns: 112px minmax(500px, 560px) minmax(420px, 1fr);
+  grid-template-columns: 72px minmax(540px, 600px) minmax(420px, 1fr);
   gap: 18px;
   overflow: hidden;
   color: var(--app-text);
@@ -1193,8 +1420,16 @@ export default {
     linear-gradient(135deg, var(--app-bg), var(--app-surface));
 }
 
-.main-shell.nav-collapsed {
-  grid-template-columns: 72px minmax(540px, 600px) minmax(420px, 1fr);
+.main-shell.compact-mode {
+  grid-template-columns: 72px minmax(360px, 420px) minmax(480px, 1fr);
+}
+
+.main-shell.detail-collapsed {
+  grid-template-columns: 72px minmax(540px, 600px) 10px;
+}
+
+.main-shell.compact-mode.detail-collapsed {
+  grid-template-columns: 72px minmax(360px, 420px) 10px;
 }
 
 .nav-rail,
@@ -1211,31 +1446,11 @@ export default {
 
 .nav-rail {
   border-radius: 10px;
-  padding: 18px 12px;
+  padding: 18px 8px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 12px;
-}
-
-.nav-collapse {
-  width: 38px;
-  height: 30px;
-  margin: -8px auto 6px;
-  border: 0;
-  border-radius: 8px;
-  color: var(--app-muted);
-  background: color-mix(in srgb, var(--app-text) 7%, transparent);
-  cursor: pointer;
-}
-
-.nav-collapse:hover {
-  color: var(--app-primary);
-  background: color-mix(in srgb, var(--app-primary) 12%, transparent);
-}
-
-.nav-collapse svg {
-  fill: currentColor;
 }
 
 .brand-mark,
@@ -1250,9 +1465,9 @@ export default {
 }
 
 .brand-mark {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 18px;
+  width: 42px;
+  height: 42px;
+  margin: 0 auto 8px;
   border-radius: 13px;
 }
 
@@ -1271,7 +1486,8 @@ export default {
 }
 
 .nav-item {
-  min-height: 76px;
+  position: relative;
+  min-height: 52px;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -1280,33 +1496,32 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 0;
   cursor: pointer;
   font-size: 12px;
 }
 
-.nav-collapsed .nav-rail {
-  padding-left: 8px;
-  padding-right: 8px;
+.nav-item .nav-label {
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  z-index: 30;
+  min-width: max-content;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--app-primary) 32%, transparent);
+  border-radius: 8px;
+  color: var(--app-text);
+  background: color-mix(in srgb, var(--app-surface) 94%, transparent);
+  box-shadow: var(--app-shadow);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(4px, -50%);
+  transition: opacity 0.14s ease, transform 0.14s ease;
 }
 
-.nav-collapsed .brand-mark {
-  width: 42px;
-  height: 42px;
-  margin-bottom: 8px;
-}
-
-.nav-collapsed .nav-item {
-  min-height: 52px;
-  gap: 0;
-}
-
-.nav-collapsed .nav-label {
-  display: none;
-}
-
-.nav-collapsed .service-status {
-  min-height: 52px;
+.nav-item:hover .nav-label {
+  opacity: 1;
+  transform: translate(0, -50%);
 }
 
 .nav-item:hover,
@@ -1322,7 +1537,7 @@ export default {
 
 .service-status {
   margin-top: auto;
-  min-height: 78px;
+  min-height: 52px;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -1332,6 +1547,10 @@ export default {
   color: var(--app-text);
   background: color-mix(in srgb, var(--app-bg) 48%, transparent);
   font-size: 12px;
+}
+
+.service-status .nav-label {
+  display: none;
 }
 
 .service-status small {
@@ -1365,6 +1584,10 @@ export default {
   grid-template-columns: 1fr 90px;
   gap: 10px;
   margin-bottom: 16px;
+}
+
+.panel-toolbar.has-edit-toggle {
+  grid-template-columns: 1fr auto 90px;
 }
 
 .search-box {
@@ -1403,6 +1626,31 @@ export default {
   background: color-mix(in srgb, var(--app-bg) 46%, transparent);
 }
 
+.edit-toggle {
+  height: 46px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  padding: 0 14px;
+  color: var(--app-muted);
+  background: color-mix(in srgb, var(--app-bg) 46%, transparent);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.edit-toggle:hover,
+.edit-toggle.active {
+  color: var(--app-primary-text);
+  border-color: color-mix(in srgb, var(--app-primary) 60%, transparent);
+  background: var(--app-primary);
+}
+
+.sort-select option,
+.field select option {
+  color: var(--app-text);
+  background: var(--app-surface-soft);
+}
+
 .connection-list {
   overflow: auto;
   padding-right: 6px;
@@ -1410,15 +1658,15 @@ export default {
 
 .connection-card {
   width: 100%;
-  min-height: 92px;
-  margin-bottom: 10px;
+  min-height: 82px;
+  margin-bottom: 8px;
   border: 1px solid transparent;
   border-radius: 9px;
-  padding: 14px 12px;
+  padding: 12px 11px;
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-columns: 42px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   color: var(--app-text);
   background: color-mix(in srgb, var(--app-bg) 46%, transparent);
   cursor: pointer;
@@ -1432,9 +1680,9 @@ export default {
 }
 
 .connection-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
   overflow: hidden;
 }
 
@@ -1448,15 +1696,34 @@ export default {
 
 .connection-main {
   min-width: 0;
-  min-height: 58px;
+  min-height: 50px;
   display: grid;
-  grid-template-rows: 26px 42px;
+  grid-template-rows: 22px 32px;
   align-content: center;
-  gap: 6px;
+  gap: 3px;
+}
+
+.compact-mode .connection-card {
+  min-height: 62px;
+  padding: 8px 9px;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.compact-mode .connection-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.compact-mode .connection-main {
+  min-height: 38px;
+  grid-template-rows: 18px 24px;
+  gap: 2px;
 }
 
 .connection-main strong {
-  font-size: 14px;
+  font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1468,11 +1735,21 @@ export default {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 12px auto;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  font-size: 11px;
+}
+
+.compact-mode .connection-meta {
+  grid-template-columns: minmax(0, 1fr) 8px auto;
+  gap: 8px;
 }
 
 .connection-meta.has-reorder {
   grid-template-columns: minmax(0, 1fr) auto 12px auto;
+}
+
+.compact-mode .connection-meta.has-reorder {
+  grid-template-columns: minmax(0, 1fr) auto 8px auto;
 }
 
 .connection-meta > span:first-child,
@@ -1486,13 +1763,26 @@ export default {
 .connection-main b,
 .detail-title b {
   display: inline-flex;
-  min-width: 28px;
+  min-width: 24px;
   justify-content: center;
-  margin-right: 8px;
-  padding: 2px 7px;
-  border-radius: 6px;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 5px;
   color: #ffffff;
   background: var(--app-primary);
+  font-size: 11px;
+}
+
+.compact-mode .connection-main b {
+  min-width: 19px;
+  margin-right: 0;
+  padding: 1px 5px;
+  font-size: 10px;
+  border-radius: 4px;
+}
+
+.compact-mode .connection-target {
+  display: none;
 }
 
 .connection-main i,
@@ -1566,14 +1856,41 @@ export default {
 }
 
 .round-action {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
+  transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.compact-mode .round-action {
+  width: 28px;
+  height: 28px;
+}
+
+.compact-mode .quick-actions {
+  gap: 6px;
 }
 
 .round-action:disabled {
   opacity: 0.38;
   cursor: not-allowed;
+  transform: none;
+}
+
+.round-action:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--app-primary) 18%, transparent);
+}
+
+.round-action.open-folder:not(:disabled) {
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--app-success), color-mix(in srgb, var(--app-success) 58%, var(--app-primary)));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--app-success) 35%, transparent),
+    0 10px 24px color-mix(in srgb, var(--app-success) 22%, transparent);
+}
+
+.round-action.open-folder:not(:disabled):hover {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--app-success) 78%, #ffffff), var(--app-primary));
 }
 
 .round-action.loading {
@@ -1597,11 +1914,67 @@ export default {
 }
 
 .detail-panel {
-  padding: 16px;
+  position: relative;
+  padding: 16px 16px 16px 30px;
   display: flex;
   flex-direction: column;
   gap: 14px;
   overflow: hidden;
+}
+
+.detail-panel.collapsed {
+  width: 10px;
+  min-width: 10px;
+  max-width: 10px;
+  justify-self: start;
+  padding: 0;
+  gap: 0;
+  border-color: color-mix(in srgb, var(--app-primary) 32%, var(--app-border));
+  background: color-mix(in srgb, var(--app-surface) 76%, transparent);
+}
+
+.detail-panel.collapsed > :not(.detail-collapse-handle) {
+  display: none !important;
+}
+
+.detail-collapse-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 10px;
+  border: 0;
+  border-radius: 10px 0 0 10px;
+  color: var(--app-muted);
+  background: color-mix(in srgb, var(--app-text) 5%, transparent);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+  transition: color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+  z-index: 2;
+}
+
+.detail-collapse-handle:hover {
+  color: #ffffff;
+  background: linear-gradient(180deg, var(--app-success), color-mix(in srgb, var(--app-success) 58%, var(--app-primary)));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--app-success) 30%, transparent),
+    0 14px 30px color-mix(in srgb, var(--app-success) 22%, transparent);
+}
+
+.detail-panel.collapsed .detail-collapse-handle {
+  width: 100%;
+  border-right: 0;
+  border-radius: 10px;
+}
+
+.detail-panel.can-collapse:not(.collapsed) .detail-topbar,
+.detail-panel.can-collapse:not(.collapsed) .detail-card,
+.detail-panel.can-collapse:not(.collapsed) .empty-detail,
+.detail-panel.can-collapse:not(.collapsed) .workspace-card,
+.detail-panel.can-collapse:not(.collapsed) .stats-bar,
+.detail-panel.can-collapse:not(.collapsed) .debug-panel {
+  margin-left: 0;
 }
 
 .detail-topbar {
@@ -1803,6 +2176,14 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.settings-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
 }
 
 .workspace-footer {
@@ -2156,7 +2537,7 @@ export default {
   font-size: 12px;
 }
 
-.stats-bar span {
+.stats-bar > span {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -2165,12 +2546,25 @@ export default {
   background: color-mix(in srgb, var(--app-text) 7%, transparent);
 }
 
+.stats-bar .status-dot {
+  width: 22px;
+  height: 12px;
+  flex: 0 0 22px;
+  border-radius: 999px;
+  padding: 0;
+  background: var(--app-success);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ffffff 18%, transparent),
+    0 0 12px color-mix(in srgb, var(--app-success) 38%, transparent);
+}
+
 .stats-bar .success {
   color: var(--app-success);
 }
 
 .stats-bar .warning .status-dot {
   background: #f7b731;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ffffff 18%, transparent),
+    0 0 12px color-mix(in srgb, #f7b731 38%, transparent);
 }
 
 .debug-panel {
@@ -2246,13 +2640,9 @@ export default {
 
 @media (max-width: 1180px) {
   .main-shell {
-    grid-template-columns: 88px minmax(430px, 500px) minmax(420px, 1fr);
+    grid-template-columns: 64px minmax(460px, 520px) minmax(400px, 1fr);
     padding: 12px;
     gap: 12px;
-  }
-
-  .main-shell.nav-collapsed {
-    grid-template-columns: 64px minmax(460px, 520px) minmax(400px, 1fr);
   }
 
   .detail-body {

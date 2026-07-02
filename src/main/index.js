@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Menu, Tray, clipboard, dialog, ipcMain, shell } from 'electron'
 import path from 'path'
 import { mkdir, readFile, writeFile } from 'fs/promises'
+import { existsSync } from 'fs'
 
 const isSecondInstance = !app.requestSingleInstanceLock()
 const userDataPath = path.join(app.getPath('appData'), 'sshfs-win-manager-evo')
@@ -18,6 +19,37 @@ const legacyRendererWebPreferences = {
 const staticPath = app.isPackaged
   ? path.join(process.resourcesPath, 'static')
   : path.join(__dirname, '../../static')
+
+function getLegacyConfigCandidates () {
+  const appDataPath = app.getPath('appData')
+
+  return [
+    path.join(appDataPath, 'sshfs-win-manager', 'vuex.json'),
+    path.join(appDataPath, 'SSHFS-Win Manager', 'vuex.json'),
+    path.join(appDataPath, 'Roaming', 'sshfs-win-manager', 'vuex.json'),
+    path.join(appDataPath, 'Roaming', 'SSHFS-Win Manager', 'vuex.json')
+  ]
+}
+
+function getLegacyConnections (data) {
+  if (Array.isArray(data)) {
+    return data
+  }
+
+  if (data && data.Data && Array.isArray(data.Data.connections)) {
+    return data.Data.connections
+  }
+
+  if (data && Array.isArray(data.connections)) {
+    return data.connections
+  }
+
+  if (data && data.state && data.state.Data && Array.isArray(data.state.Data.connections)) {
+    return data.state.Data.connections
+  }
+
+  return []
+}
 
 app.setName('SSHFS-Win Manager Evo')
 app.setPath('userData', userDataPath)
@@ -143,6 +175,35 @@ ipcMain.on('theme:preview', (event, theme) => {
     }
   })
 })
+ipcMain.on('main-window:set-detail-collapsed', (event, payload) => {
+  const win = getSenderWindow(event)
+
+  if (!win || win.isDestroyed()) {
+    return
+  }
+
+  const collapsed = typeof payload === 'object' ? payload.collapsed : payload
+  const delta = typeof payload === 'object' ? Number(payload.delta) || 0 : 0
+  const requestedWidth = typeof payload === 'object' ? Number(payload.width) || 0 : 0
+  const requestedMinWidth = typeof payload === 'object' ? Number(payload.minWidth) || 0 : 0
+  const bounds = win.getBounds()
+  const targetMinWidth = requestedMinWidth || (collapsed ? 700 : 1100)
+  const targetWidth = requestedWidth > 0
+    ? Math.max(targetMinWidth, requestedWidth)
+    : collapsed
+      ? Math.max(targetMinWidth, bounds.width - delta)
+      : Math.max(targetMinWidth, bounds.width + delta)
+
+  if (win.isMaximized()) {
+    win.unmaximize()
+  }
+
+  win.setMinimumSize(targetMinWidth, 650)
+  win.setBounds({
+    ...bounds,
+    width: targetWidth
+  }, true)
+})
 ipcMain.handle('app-state:load', async () => {
   try {
     return JSON.parse(await readFile(appStatePath, 'utf8'))
@@ -195,6 +256,34 @@ ipcMain.handle('connections:import', async event => {
     content: await readFile(filePath, 'utf8')
   }
 })
+ipcMain.handle('legacy-config:import', async () => {
+  const candidates = getLegacyConfigCandidates()
+  const filePath = candidates.find(candidate => existsSync(candidate))
+
+  if (!filePath) {
+    return {
+      found: false,
+      candidates
+    }
+  }
+
+  try {
+    const data = JSON.parse(await readFile(filePath, 'utf8'))
+    const connections = getLegacyConnections(data)
+
+    return {
+      found: true,
+      filePath,
+      connections
+    }
+  } catch (error) {
+    return {
+      found: true,
+      filePath,
+      error: error.message || String(error)
+    }
+  }
+})
 ipcMain.on('password-prompt:response', (event, data) => {
   if (mainWindow) {
     mainWindow.webContents.send('password-prompt:response', data)
@@ -217,7 +306,7 @@ if (isSecondInstance) {
       height: 760,
       width: 1440,
       minHeight: 650,
-      minWidth: 1100,
+      minWidth: 700,
       useContentSize: true,
       frame: false,
       maximizable: true,

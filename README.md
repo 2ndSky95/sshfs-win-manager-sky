@@ -13,6 +13,7 @@ SSHFS-Win Manager Evo est un fork modernisé de [SSHFS-Win Manager](https://gith
 - Attribution automatique d'une lettre de lecteur libre avec `Auto (next free letter)`.
 - Copie rapide d'une commande `ssh` équivalente pour ouvrir la connexion dans un terminal.
 - Import/export JSON des connexions.
+- Import de l'ancienne configuration SSHFS-Win Manager depuis `%APPDATA%\sshfs-win-manager\vuex.json`.
 - Interface multilingue avec sélection de la langue dans les paramètres.
 - Mode debug intégré avec logs de connexion.
 - Démarrage avec Windows et fonctionnement dans la zone de notification.
@@ -66,41 +67,7 @@ La langue se change depuis `Paramètres` > `Langue`. Le choix est enregistré da
 
 ## Développement
 
-Installer les dépendances :
-
-```powershell
-npm install
-```
-
-Lancer en mode développement :
-
-```powershell
-npm run dev
-```
-
-Lancer en mode développement avec démarrage dans le tray :
-
-```powershell
-npm run dev:tray
-```
-
-Compiler un dossier exécutable sans installeur :
-
-```powershell
-npm run build:dir
-```
-
-Compiler l'installeur :
-
-```powershell
-npm run build
-```
-
-Nettoyer les sorties de build :
-
-```powershell
-npm run build:clean
-```
+Les informations de développement, de build, de lint et de génération des icônes sont regroupées dans [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Notes importantes
 

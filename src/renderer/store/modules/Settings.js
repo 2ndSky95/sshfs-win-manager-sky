@@ -6,6 +6,7 @@ const defaultSettings = {
   displayTrayMessageOnClose: true,
   processTrackTimeout: 15,
   showDebugPanel: false,
+  compactMode: false,
   theme: 'dark-graphite',
   language: defaultLocale
 }
@@ -19,6 +20,7 @@ function normalizeSettings (settings = {}) {
     displayTrayMessageOnClose: typeof settings.displayTrayMessageOnClose === 'boolean' ? settings.displayTrayMessageOnClose : defaultSettings.displayTrayMessageOnClose,
     processTrackTimeout: Number(settings.processTrackTimeout) || defaultSettings.processTrackTimeout,
     showDebugPanel: typeof settings.showDebugPanel === 'boolean' ? settings.showDebugPanel : defaultSettings.showDebugPanel,
+    compactMode: typeof settings.compactMode === 'boolean' ? settings.compactMode : defaultSettings.compactMode,
     theme: settings.theme || defaultSettings.theme,
     language: normalizeLocale(settings.language)
   }

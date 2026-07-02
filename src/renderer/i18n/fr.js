@@ -38,6 +38,8 @@ export default {
     sortName: 'A-Z',
     sortStatus: 'Statut',
     sortManual: 'Manuel',
+    editOrder: 'Édition',
+    editDone: 'Terminé',
     emptyTitle: 'Aucune connexion',
     emptyText: 'Ajoute une première connexion pour commencer.',
     moveUp: 'Monter',
@@ -61,6 +63,8 @@ export default {
     sshCommand: 'Connexion SSH',
     copySshCommand: 'Copier la commande SSH',
     actions: 'Actions',
+    expandPanel: 'Déplier le panneau de détail',
+    collapsePanel: 'Replier le panneau de détail',
     connectionsCount: '{count} connexions',
     connectedCount: '{count} connectées',
     busyCount: '{count} en cours',
@@ -80,14 +84,21 @@ export default {
     startupWithOS: 'Démarrer avec Windows',
     displayTrayMessageOnClose: 'Message tray à la fermeture',
     showDebugPanel: 'Afficher le panneau debug',
+    compactMode: 'Mode compact',
     exportJson: 'Export JSON',
     importJson: 'Import JSON',
+    importLegacy: 'Importer ancienne configuration',
     connections: 'Connexions',
     timeInSeconds: 'Temps en secondes',
     importConfirm: 'Importer {count} connexion(s) ? Cela remplacera la liste actuelle.',
     exportFailed: 'Export impossible. Réessaie.',
     invalidImportJson: 'Fichier d’import invalide : le JSON ne peut pas être lu.',
-    invalidImportConnections: 'Fichier d’import invalide : liste des connexions introuvable.'
+    invalidImportConnections: 'Fichier d’import invalide : liste des connexions introuvable.',
+    legacyImportNotFound: 'Aucune ancienne configuration SSHFS-Win Manager n’a été trouvée.',
+    legacyImportReadFailed: 'Impossible de lire l’ancienne configuration : {error}',
+    legacyImportEmpty: 'Ancienne configuration trouvée, mais aucune connexion n’a été détectée.',
+    legacyImportConfirm: '{count} connexion(s) trouvée(s) dans l’ancienne configuration.\n\nFichier : {filePath}\n\nImporter et fusionner avec les connexions actuelles ?',
+    legacyImportConfirmWithPasswords: '{count} connexion(s) trouvée(s) dans l’ancienne configuration.\n\nFichier : {filePath}\n\nAttention : certaines connexions contiennent un mot de passe stocké dans l’ancien fichier. Ils seront importés tels quels.\n\nImporter et fusionner avec les connexions actuelles ?'
   },
   about: {
     versionLine: 'Version {version} - édition Evo par Fabrice Simonet.',
@@ -160,6 +171,7 @@ export default {
     sshCommandCopied: 'Commande SSH copiée dans le presse-papiers',
     disconnectedError: '"{name}" a été déconnectée à cause d’une erreur de connexion.\nVérifie ta connexion internet.',
     trackedAlternative: '"{name}" est suivie avec la méthode alternative',
-    processTimeout: 'Timeout du process : impossible de se connecter à "{name}"'
+    processTimeout: 'Timeout du process : impossible de se connecter à "{name}"',
+    legacyImportDone: '{count} connexion(s) importée(s) depuis l’ancienne configuration'
   }
 }

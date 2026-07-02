@@ -38,6 +38,8 @@ export default {
     sortName: 'A-Z',
     sortStatus: 'Status',
     sortManual: 'Manual',
+    editOrder: 'Edit',
+    editDone: 'Done',
     emptyTitle: 'No connection',
     emptyText: 'Add your first connection to get started.',
     moveUp: 'Move up',
@@ -61,6 +63,8 @@ export default {
     sshCommand: 'SSH connection',
     copySshCommand: 'Copy SSH command',
     actions: 'Actions',
+    expandPanel: 'Expand detail panel',
+    collapsePanel: 'Collapse detail panel',
     connectionsCount: '{count} connections',
     connectedCount: '{count} connected',
     busyCount: '{count} in progress',
@@ -80,14 +84,21 @@ export default {
     startupWithOS: 'Start with Windows',
     displayTrayMessageOnClose: 'Tray message on close',
     showDebugPanel: 'Show debug panel',
+    compactMode: 'Compact mode',
     exportJson: 'Export JSON',
     importJson: 'Import JSON',
+    importLegacy: 'Import legacy configuration',
     connections: 'Connections',
     timeInSeconds: 'Time in seconds',
     importConfirm: 'Import {count} connection(s)? This will replace the current connection list.',
     exportFailed: 'Export failed. Please try again.',
     invalidImportJson: 'Invalid import file: JSON parsing failed.',
-    invalidImportConnections: 'Invalid import file: connections array not found.'
+    invalidImportConnections: 'Invalid import file: connections array not found.',
+    legacyImportNotFound: 'No legacy SSHFS-Win Manager configuration was found.',
+    legacyImportReadFailed: 'Could not read the legacy configuration: {error}',
+    legacyImportEmpty: 'Legacy configuration found, but no connection was detected.',
+    legacyImportConfirm: '{count} connection(s) found in the legacy configuration.\n\nFile: {filePath}\n\nImport and merge with current connections?',
+    legacyImportConfirmWithPasswords: '{count} connection(s) found in the legacy configuration.\n\nFile: {filePath}\n\nWarning: some connections contain a password stored in the legacy file. They will be imported as-is.\n\nImport and merge with current connections?'
   },
   about: {
     versionLine: 'Version {version} - Evo edition by Fabrice Simonet.',
@@ -160,6 +171,7 @@ export default {
     sshCommandCopied: 'SSH command copied to clipboard',
     disconnectedError: '"{name}" was disconnected due to a connection error.\nCheck your internet connection.',
     trackedAlternative: '"{name}" tracked using alternative method',
-    processTimeout: 'Process timeout: couldn’t connect to "{name}"'
+    processTimeout: 'Process timeout: couldn’t connect to "{name}"',
+    legacyImportDone: '{count} connection(s) imported from legacy configuration'
   }
 }

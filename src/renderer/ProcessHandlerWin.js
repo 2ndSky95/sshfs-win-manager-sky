@@ -212,7 +212,9 @@ class ProcessHandlerWin {
           askpass.paths.forEach(filePath => {
             try {
               unlinkSync(filePath)
-            } catch {}
+            } catch {
+              // Ignore cleanup errors for temporary askpass files.
+            }
           })
         }
       })

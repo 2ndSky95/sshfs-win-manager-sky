@@ -14,7 +14,9 @@
       <div class="form-item">
         <label>{{ $t('settings.theme') }}</label>
         <select v-model="form.theme" @change="previewTheme(form.theme)">
-          <option v-for="theme in themes" :key="theme.value" :value="theme.value">{{theme.label}}</option>
+          <optgroup v-for="group in themeGroups" :key="group.label" :label="group.label">
+            <option v-for="theme in group.themes" :key="theme.value" :value="theme.value">{{theme.label}}</option>
+          </optgroup>
         </select>
       </div>
 
@@ -189,15 +191,41 @@ export default {
           '--systray'
         ]
       },
-      themes: [
-        { value: 'dark-graphite', label: 'Graphite' },
-        { value: 'dark-midnight', label: 'Midnight' },
-        { value: 'dark-aurora', label: 'Aurora' },
-        { value: 'light-quartz', label: 'Quartz' },
-        { value: 'light-arctic', label: 'Arctic' },
-        { value: 'light-sage', label: 'Sage' },
-        { value: 'dark-classic', label: 'Classic dark' },
-        { value: 'light-neutral', label: 'Classic light' }
+      themeGroups: [
+        {
+          label: 'Dark',
+          themes: [
+            { value: 'dark-graphite', label: 'Graphite' },
+            { value: 'dark-midnight', label: 'Midnight' },
+            { value: 'dark-aurora', label: 'Aurora' },
+            { value: 'dark-github-desktop', label: 'GitHub Desktop' },
+            { value: 'dark-obsidian', label: 'Obsidian' },
+            { value: 'dark-slate', label: 'Slate blue' },
+            { value: 'dark-ember', label: 'Ember' },
+            { value: 'dark-forest', label: 'Forest night' },
+            { value: 'dark-steel', label: 'Steel' }
+          ]
+        },
+        {
+          label: 'Light',
+          themes: [
+            { value: 'light-quartz', label: 'Quartz' },
+            { value: 'light-arctic', label: 'Arctic' },
+            { value: 'light-sage', label: 'Sage' },
+            { value: 'light-pearl', label: 'Pearl' },
+            { value: 'light-sand', label: 'Sand' },
+            { value: 'light-rose', label: 'Rose' },
+            { value: 'light-lavender', label: 'Lavender' },
+            { value: 'light-cloud', label: 'Cloud' }
+          ]
+        },
+        {
+          label: 'Classic',
+          themes: [
+            { value: 'dark-classic', label: 'Classic dark' },
+            { value: 'light-neutral', label: 'Classic light' }
+          ]
+        }
       ]
     }
   },
