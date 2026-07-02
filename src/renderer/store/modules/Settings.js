@@ -7,6 +7,7 @@ const defaultSettings = {
   processTrackTimeout: 15,
   showDebugPanel: false,
   compactMode: false,
+  demoMode: false,
   theme: 'dark-graphite',
   language: defaultLocale
 }
@@ -21,6 +22,7 @@ function normalizeSettings (settings = {}) {
     processTrackTimeout: Number(settings.processTrackTimeout) || defaultSettings.processTrackTimeout,
     showDebugPanel: typeof settings.showDebugPanel === 'boolean' ? settings.showDebugPanel : defaultSettings.showDebugPanel,
     compactMode: typeof settings.compactMode === 'boolean' ? settings.compactMode : defaultSettings.compactMode,
+    demoMode: typeof settings.demoMode === 'boolean' ? settings.demoMode : defaultSettings.demoMode,
     theme: settings.theme || defaultSettings.theme,
     language: normalizeLocale(settings.language)
   }

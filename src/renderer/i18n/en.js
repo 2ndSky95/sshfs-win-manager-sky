@@ -1,7 +1,8 @@
 export default {
   app: {
     name: 'SSHFS-Win Manager Evo',
-    serviceActive: 'Service active'
+    serviceActive: 'Service active',
+    serviceActiveShort: 'Active'
   },
   nav: {
     expand: 'Expand menu',
@@ -85,6 +86,7 @@ export default {
     displayTrayMessageOnClose: 'Tray message on close',
     showDebugPanel: 'Show debug panel',
     compactMode: 'Compact mode',
+    demoMode: 'Demo mode',
     exportJson: 'Export JSON',
     importJson: 'Import JSON',
     importLegacy: 'Import legacy configuration',

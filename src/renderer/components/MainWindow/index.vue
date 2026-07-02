@@ -28,8 +28,8 @@
 
         <div class="service-status">
           <span class="status-dot"></span>
-          <span class="nav-label">{{ $t('app.serviceActive') }}</span>
-          <small class="nav-label">v{{ appVersion }}</small>
+          <strong>{{ $t('app.serviceActiveShort') }}</strong>
+          <span class="service-status-tooltip">{{ $t('app.serviceActive') }} · v{{ appVersion }}</span>
         </div>
       </aside>
 
@@ -232,6 +232,11 @@
                 <input v-model="settingsForm.compactMode" type="checkbox">
                 <span class="switch-track"></span>
                 <span class="toggle-text">{{ $t('settings.compactMode') }}</span>
+              </label>
+              <label class="settings-toggle">
+                <input v-model="settingsForm.demoMode" type="checkbox">
+                <span class="switch-track"></span>
+                <span class="toggle-text">{{ $t('settings.demoMode') }}</span>
               </label>
             </div>
 
@@ -474,8 +479,52 @@ const defaultSettings = {
   processTrackTimeout: 15,
   showDebugPanel: false,
   compactMode: false,
+  demoMode: false,
   theme: 'dark-graphite',
   language: defaultLocale
+}
+
+function createDemoConnections () {
+  const names = [
+    ['Production Web', 'prod.web.example.com', '/var/www/current', 'P:', 'connected', true],
+    ['Staging API', 'staging-api.example.net', '/srv/api', 'S:', 'connected', false],
+    ['Backups Vault', 'backup01.example.org', '/data/backups', 'B:', 'disconnected', true],
+    ['Client Alpha', 'alpha.sftp.demo', '/home/clients/alpha', 'A:', 'connected', false],
+    ['Client Bravo', 'bravo.sftp.demo', '/home/clients/bravo', 'R:', 'connecting', true],
+    ['Media Storage', 'media.internal.demo', '/mnt/media', 'M:', 'connected', false],
+    ['Logs Central', 'logs.internal.demo', '/var/log', 'L:', 'disconnected', false],
+    ['Shop Front', 'shop.example.com', '/var/www/shop', 'H:', 'connected', true],
+    ['Archives 2026', 'archive.example.net', '/archives/2026', 'V:', 'disconnected', false],
+    ['Design Assets', 'assets.example.io', '/projects/assets', 'D:', 'connected', true],
+    ['Monitoring', 'monitoring.internal', '/opt/monitoring', 'N:', 'connecting', false],
+    ['Dev Sandbox', 'sandbox.local', '/home/dev/sandbox', 'X:', 'disconnected', true],
+    ['Invoices', 'billing.example.com', '/secure/invoices', 'I:', 'connected', false],
+    ['Legacy Server', 'legacy.example.org', '/srv/legacy', 'G:', 'disconnected', false],
+    ['Team Shared', 'team-share.internal', '/shared/team', 'T:', 'connected', true]
+  ]
+
+  return names.map(([name, host, folder, mountPoint, status, favorite], index) => ({
+    uuid: `demo-connection-${index + 1}`,
+    demo: true,
+    name,
+    host,
+    port: index % 3 === 0 ? 2222 : 22,
+    user: index % 2 === 0 ? 'demo' : 'deploy',
+    folder,
+    mountPoint,
+    preferredMountPoint: mountPoint,
+    authType: index % 4 === 0 ? 'key-file' : 'password',
+    favorite,
+    status,
+    pid: status === 'connected' ? 9000 + index : null,
+    iconDataUrl: null,
+    advanced: {
+      customCmdlOptionsEnabled: false,
+      customCmdlOptions: [],
+      connectOnStartup: index % 5 === 0,
+      reconnect: index % 4 === 0
+    }
+  }))
 }
 
 function normalizeSettings (settings = {}) {
@@ -488,6 +537,7 @@ function normalizeSettings (settings = {}) {
     processTrackTimeout: Number(settings.processTrackTimeout) || defaultSettings.processTrackTimeout,
     showDebugPanel: typeof settings.showDebugPanel === 'boolean' ? settings.showDebugPanel : defaultSettings.showDebugPanel,
     compactMode: typeof settings.compactMode === 'boolean' ? settings.compactMode : defaultSettings.compactMode,
+    demoMode: typeof settings.demoMode === 'boolean' ? settings.demoMode : defaultSettings.demoMode,
     theme: settings.theme || defaultSettings.theme,
     language: normalizeLocale(settings.language)
   }
@@ -787,6 +837,11 @@ export default {
     },
 
     dropConnection (uuid) {
+      if (this.appSettings.demoMode) {
+        this.draggedConnectionUuid = null
+        return
+      }
+
       if (!this.draggedConnectionUuid || this.draggedConnectionUuid === uuid) {
         return
       }
@@ -816,6 +871,10 @@ export default {
     },
 
     moveConnection (conn, direction) {
+      if (this.appSettings.demoMode) {
+        return
+      }
+
       const visibleIndex = this.filteredConnections.findIndex(item => item.uuid === conn.uuid)
       const target = this.filteredConnections[visibleIndex + direction]
 
@@ -856,6 +915,13 @@ export default {
     },
 
     connect (conn) {
+      if (this.appSettings.demoMode && conn.demo) {
+        conn.status = 'connected'
+        conn.pid = 9000
+        this.selectConnection(conn)
+        return Promise.resolve()
+      }
+
       return new Promise(resolve => {
         this.$store.dispatch('UPDATE_CONNECTION_STATUS', {
           uuid: conn.uuid,
@@ -929,6 +995,12 @@ export default {
     },
 
     disconnect (conn) {
+      if (this.appSettings.demoMode && conn.demo) {
+        conn.status = 'disconnected'
+        conn.pid = null
+        return
+      }
+
       conn.status = 'disconnecting'
 
       ProcessManager.terminate(conn.pid).then(() => {
@@ -939,6 +1011,10 @@ export default {
     },
 
     openLocal (path) {
+      if (this.appSettings.demoMode) {
+        return
+      }
+
       if (path) {
         ipcRenderer.invoke('shell:open-path', path)
       }
@@ -962,6 +1038,10 @@ export default {
     },
 
     editConnection (conn) {
+      if (this.appSettings.demoMode && conn.demo) {
+        return
+      }
+
       ipcRenderer.invoke('window:open', {
         name: 'edit-connection-window',
         route: `#/edit-connection/${conn.uuid}`,
@@ -979,6 +1059,10 @@ export default {
     },
 
     cloneConnection (conn) {
+      if (this.appSettings.demoMode && conn.demo) {
+        return
+      }
+
       const connCopy = {...conn}
 
       const randName = Math.random().toString(30).substr(-4)
@@ -993,6 +1077,10 @@ export default {
     },
 
     deleteConnection (conn) {
+      if (this.appSettings.demoMode && conn.demo) {
+        return
+      }
+
       const currentIndex = this.connections.findIndex(item => item.uuid === conn.uuid)
 
       this.$store.dispatch('DELETE_CONNECTION', conn)
@@ -1158,6 +1246,10 @@ export default {
     },
 
     connections () {
+      if (this.appSettings.demoMode) {
+        return this.demoConnections
+      }
+
       return this.$store.state.Data.connections
     },
 
@@ -1259,6 +1351,7 @@ export default {
       sortMode: 'name',
       searchText: '',
       settingsForm: { ...defaultSettings },
+      demoConnections: createDemoConnections(),
       themeGroups: [
         {
           label: 'Dark',
@@ -1536,8 +1629,9 @@ export default {
 }
 
 .service-status {
+  position: relative;
   margin-top: auto;
-  min-height: 52px;
+  min-height: 58px;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -1549,12 +1643,33 @@ export default {
   font-size: 12px;
 }
 
-.service-status .nav-label {
-  display: none;
+.service-status strong {
+  color: var(--app-success);
+  font-size: 10px;
+  line-height: 1;
 }
 
-.service-status small {
-  color: var(--app-muted);
+.service-status-tooltip {
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  z-index: 30;
+  min-width: max-content;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--app-success) 32%, transparent);
+  border-radius: 8px;
+  color: var(--app-text);
+  background: color-mix(in srgb, var(--app-surface) 94%, transparent);
+  box-shadow: var(--app-shadow);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(4px, -50%);
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+
+.service-status:hover .service-status-tooltip {
+  opacity: 1;
+  transform: translate(0, -50%);
 }
 
 .status-dot {

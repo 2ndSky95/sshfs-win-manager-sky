@@ -4,6 +4,22 @@ Interface graphique Windows pour monter des dossiers distants via SSHFS-Win.
 
 SSHFS-Win Manager Evo est un fork modernisé de [SSHFS-Win Manager](https://github.com/evsar3/sshfs-win-manager), créé à l'origine par Evandro Araujo. Cette édition ajoute une interface revue, de nouveaux modes d'authentification, des outils de gestion des connexions et plusieurs corrections adaptées aux versions récentes de Windows.
 
+## Aperçu
+
+<p align="center">
+  <img src="imgs/full.png" alt="Vue principale de SSHFS-Win Manager Evo" width="100%">
+</p>
+
+Vue principale de SSHFS-Win Manager Evo.
+
+Mode compact :
+
+![Mode compact de SSHFS-Win Manager Evo](imgs/compact.png)
+
+Ajout d'une connexion :
+
+![Fenêtre d'ajout d'une connexion](imgs/add.png)
+
 ## Fonctionnalités
 
 - Montage de dossiers distants SSH/SFTP en lecteur Windows via SSHFS-Win.
