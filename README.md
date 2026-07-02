@@ -13,6 +13,7 @@ SSHFS-Win Manager Evo est un fork modernisé de [SSHFS-Win Manager](https://gith
 - Attribution automatique d'une lettre de lecteur libre avec `Auto (next free letter)`.
 - Copie rapide d'une commande `ssh` équivalente pour ouvrir la connexion dans un terminal.
 - Import/export JSON des connexions.
+- Interface multilingue avec sélection de la langue dans les paramètres.
 - Mode debug intégré avec logs de connexion.
 - Démarrage avec Windows et fonctionnement dans la zone de notification.
 - Connexion automatique au démarrage, exécutée de façon séquentielle pour éviter les collisions.
@@ -51,6 +52,17 @@ SSHFS-Win Manager Evo ne remplace pas SSHFS-Win : il fournit l'interface graphiq
 3. Ajoutez une connexion.
 4. Choisissez une lettre de lecteur disponible.
 5. Cliquez sur `Connecter`.
+
+## Langues
+
+L'application prend en charge plusieurs langues d'interface.
+
+Langues disponibles actuellement :
+
+- Français
+- Anglais
+
+La langue se change depuis `Paramètres` > `Langue`. Le choix est enregistré dans la configuration locale et réappliqué au prochain lancement.
 
 ## Développement
 
