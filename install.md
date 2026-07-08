@@ -4,6 +4,52 @@ Cette page liste ce qu'il faut installer avant de tester SSHFS-Win Manager Evo s
 
 L'application ne fournit pas le moteur SSHFS elle-meme : elle lance le binaire `sshfs` installe sur le systeme, puis utilise FUSE pour exposer le dossier distant comme un dossier local.
 
+## Windows
+
+Sur Windows, installer :
+
+- WinFsp : <https://winfsp.dev/>
+- SSHFS-Win : <https://github.com/billziss-gh/sshfs-win>
+
+SSHFS-Win depend de WinFsp. Installer WinFsp en premier, puis SSHFS-Win.
+
+### Chemin SSHFS attendu par l'application
+
+Le chemin par defaut est :
+
+```text
+C:\Program Files\SSHFS-Win\bin\sshfs.exe
+```
+
+Si SSHFS-Win est installe ailleurs, renseigner le chemin exact dans `Parametres` > `Binaire SSHFS`.
+
+### Verifier l'installation Windows
+
+Dans PowerShell :
+
+```powershell
+Test-Path "C:\Program Files\SSHFS-Win\bin\sshfs.exe"
+& "C:\Program Files\SSHFS-Win\bin\sshfs.exe" --version
+```
+
+La premiere commande doit retourner `True`.
+
+### Test manuel Windows
+
+Avant de tester dans l'application, verifier qu'un montage SSHFS simple fonctionne :
+
+```powershell
+& "C:\Program Files\SSHFS-Win\bin\sshfs.exe" user@example.com:/home/user X:
+```
+
+Pour demonter le lecteur :
+
+```powershell
+net use X: /delete
+```
+
+Adapter `X:` avec une lettre libre.
+
 ## Linux
 
 ### Debian, Ubuntu, Linux Mint
