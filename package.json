@@ -8,6 +8,10 @@
   "description": "A GUI for SSHFS-Win (https://github.com/billziss-gh/sshfs-win)",
   "license": "MIT",
   "main": "./out/main/index.js",
+  "engines": {
+    "node": "^22.18.0 || >=24.11.0",
+    "npm": ">=10"
+  },
   "scripts": {
     "build": "npm run build:clean-output && node scripts/run-electron-vite.cjs build && electron-builder",
     "build:dir": "npm run build:clean-output && node scripts/run-electron-vite.cjs build && electron-builder --dir",

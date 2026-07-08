@@ -6,11 +6,22 @@ Le projet est en cours d'ouverture multi-OS. Windows reste la cible de packaging
 
 ## Prerequis
 
-- Node.js et npm
+- Node.js et npm compatibles avec `package.json`
 - Git
 - Les prerequis SSHFS de votre OS pour tester une vraie connexion
 
 La configuration actuelle a ete verifiee avec Node `24.11.1` et npm `11.6.2`.
+
+Le projet fournit un fichier `.nvmrc`. Avec `nvm` :
+
+```bash
+nvm install
+nvm use
+node -v
+npm -v
+```
+
+Les dependances actuelles demandent Node `^22.18.0` ou `>=24.11.0`. Sur Ubuntu, le Node fourni par les depots APT peut etre trop ancien.
 
 Pour installer les prerequis SSHFS par systeme, voir [install.md](install.md).
 
