@@ -129,7 +129,7 @@
                     class="round-action open-folder"
                     :disabled="conn.status !== 'connected'"
                     v-tooltip="$t('common.openFolder')"
-                    @click.stop="openLocal(conn.mountPoint === 'auto' ? conn.preferredMountPoint : conn.mountPoint)"
+                    @click.stop="openLocal(getLocalMountPath(conn))"
                   >
                     <Icon icon="openFolder"/>
                   </button>
@@ -188,7 +188,7 @@
           <div class="settings-grid">
             <label class="field">
               <span>{{ $t('settings.sshfsBinary') }}</span>
-              <input v-model="settingsForm.sshfsBinary" type="text" placeholder="C:\Program Files\SSHFS-Win\bin\sshfs.exe">
+              <input v-model="settingsForm.sshfsBinary" type="text" :placeholder="sshfsBinaryPlaceholder">
             </label>
 
             <label class="field compact">
@@ -426,7 +426,7 @@
                 class="action-button"
                 type="button"
                 :disabled="selectedConnection.status !== 'connected'"
-                @click="openLocal(selectedConnection.mountPoint === 'auto' ? selectedConnection.preferredMountPoint : selectedConnection.mountPoint)"
+                @click="openLocal(getLocalMountPath(selectedConnection))"
               >
                 <Icon icon="openFolder"/>
                 {{ $t('common.openFolder') }}
@@ -483,23 +483,12 @@ import { v4 as uuid } from 'uuid'
 import ProcessManager from '@/ProcessManager.js'
 import SecretManager from '@/SecretManager.js'
 import { setLocale } from '@/i18n/index.js'
-import { defaultLocale, normalizeLocale, supportedLocaleOptions } from '@/i18n/locales.js'
+import { supportedLocaleOptions } from '@/i18n/locales.js'
+import { defaultSettings, normalizeSettings } from '@/store/SettingsDefaults.js'
+import { currentPlatform, getConnectionMountPoint } from '@/platform/index.js'
 
 import Window from '@/components/Window/index.vue'
 import Icon from '@/components/Icon.vue'
-
-const defaultSettings = {
-  sshfsBinary: 'C:\\Program Files\\SSHFS-Win\\bin\\sshfs.exe',
-  startupWithOS: true,
-  displayTrayMessageOnClose: true,
-  processTrackTimeout: 15,
-  showDebugPanel: false,
-  compactMode: false,
-  demoMode: false,
-  passkeyRetention: '12h',
-  theme: 'dark-graphite',
-  language: defaultLocale
-}
 
 function createDemoConnections () {
   const names = [
@@ -542,23 +531,6 @@ function createDemoConnections () {
       reconnect: index % 4 === 0
     }
   }))
-}
-
-function normalizeSettings (settings = {}) {
-  return {
-    ...defaultSettings,
-    ...settings,
-    sshfsBinary: settings.sshfsBinary || defaultSettings.sshfsBinary,
-    startupWithOS: typeof settings.startupWithOS === 'boolean' ? settings.startupWithOS : defaultSettings.startupWithOS,
-    displayTrayMessageOnClose: typeof settings.displayTrayMessageOnClose === 'boolean' ? settings.displayTrayMessageOnClose : defaultSettings.displayTrayMessageOnClose,
-    processTrackTimeout: Number(settings.processTrackTimeout) || defaultSettings.processTrackTimeout,
-    showDebugPanel: typeof settings.showDebugPanel === 'boolean' ? settings.showDebugPanel : defaultSettings.showDebugPanel,
-    compactMode: typeof settings.compactMode === 'boolean' ? settings.compactMode : defaultSettings.compactMode,
-    demoMode: typeof settings.demoMode === 'boolean' ? settings.demoMode : defaultSettings.demoMode,
-    passkeyRetention: settings.passkeyRetention || defaultSettings.passkeyRetention,
-    theme: settings.theme || defaultSettings.theme,
-    language: normalizeLocale(settings.language)
-  }
 }
 
 export default {
@@ -1168,7 +1140,7 @@ export default {
 
       conn.status = 'disconnecting'
 
-      ProcessManager.terminate(conn.pid).then(() => {
+      ProcessManager.terminate(conn.pid, conn).then(() => {
         conn.status = 'disconnected'
 
         this.updateConnectionList()
@@ -1183,6 +1155,10 @@ export default {
       if (path) {
         ipcRenderer.invoke('shell:open-path', path)
       }
+    },
+
+    getLocalMountPath (conn) {
+      return getConnectionMountPoint(conn)
     },
 
     addNewConnection () {
@@ -1380,15 +1356,9 @@ export default {
     },
 
     mountPointLabel (conn) {
-      if (conn.status === 'connected' && conn.mountPoint === 'auto') {
-        return conn.preferredMountPoint || 'Auto'
-      }
+      const mountPoint = getConnectionMountPoint(conn)
 
-      if (conn.mountPoint === 'auto') {
-        return conn.preferredMountPoint || 'Auto'
-      }
-
-      return conn.mountPoint || 'Auto'
+      return mountPoint === 'auto' ? 'Auto' : (mountPoint || 'Auto')
     },
 
     statusLabel (conn) {
@@ -1488,6 +1458,10 @@ export default {
 
     appSettings () {
       return this.$store.state.Settings.settings
+    },
+
+    sshfsBinaryPlaceholder () {
+      return currentPlatform.sshfsBinary
     }
   },
 
@@ -1655,7 +1629,7 @@ export default {
     })
 
     ProcessManager.on('timeout', conn => {
-      const mountPoint = conn.mountPoint === 'auto' ? conn.preferredMountPoint : conn.mountPoint
+      const mountPoint = getConnectionMountPoint(conn)
 
       if (fs.existsSync(mountPoint)) {
         ProcessManager.getLastSpawnedProcess().then(process => {

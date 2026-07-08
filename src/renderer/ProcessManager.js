@@ -2,10 +2,14 @@ import { EventEmitter } from 'events'
 import os from 'os'
 
 import store from './store/index.js'
-import ProcessHandlerWin from './ProcessHandlerWin.js'
+import ProcessHandlerLinux from './process/ProcessHandlerLinux.js'
+import ProcessHandlerMac from './process/ProcessHandlerMac.js'
+import ProcessHandlerUnsupported from './process/ProcessHandlerUnsupported.js'
+import ProcessHandlerWin from './process/ProcessHandlerWin.js'
 
 let processList = []
 let processWatchList = {}
+let processConnectionList = {}
 
 class ProcessManager extends EventEmitter {
   WATCH_INTERVAL = 5000
@@ -17,6 +21,10 @@ class ProcessManager extends EventEmitter {
   }
 
   create (conn) {
+    if (!this.processHandler) {
+      return Promise.reject(new Error(`Unsupported platform: ${os.platform()}`))
+    }
+
     this.processHandler.settings = store.state.Settings.settings
 
     const timeoutTimer = setTimeout(() => {
@@ -33,6 +41,7 @@ class ProcessManager extends EventEmitter {
         this.watch(process.pid)
 
         processList.push(process.pid)
+        processConnectionList[process.pid] = conn
 
         resolve(process.pid)
       }).catch(error => {
@@ -43,14 +52,15 @@ class ProcessManager extends EventEmitter {
     })
   }
 
-  terminate (pid) {
+  terminate (pid, conn = null) {
     return new Promise((resolve) => {
-      this.processHandler.terminate(pid).then(() => {
+      this.processHandler.terminate(pid, conn || processConnectionList[pid]).then(() => {
         this.emit('terminated', pid)
 
         this.unwatch(pid)
 
         processList = processList.filter(a => a !== pid)
+        delete processConnectionList[pid]
 
         resolve()
       })
@@ -61,7 +71,7 @@ class ProcessManager extends EventEmitter {
     const promises = []
 
     processList.forEach(pid => {
-      promises.push(this.terminate(pid))
+      promises.push(this.terminate(pid, processConnectionList[pid]))
     })
 
     return Promise.all(promises)
@@ -74,6 +84,7 @@ class ProcessManager extends EventEmitter {
           this.emit('not-found', pid)
 
           this.unwatch(pid)
+          delete processConnectionList[pid]
         }
       })
     }, this.WATCH_INTERVAL)
@@ -94,10 +105,17 @@ class ProcessManager extends EventEmitter {
 
 const settings = store.state.Settings.settings
 
-let processManager = null
-
-if (os.platform() === 'win32') {
-  processManager = new ProcessHandlerWin(settings)
+function createProcessHandler () {
+  switch (os.platform()) {
+    case 'win32':
+      return new ProcessHandlerWin(settings)
+    case 'linux':
+      return new ProcessHandlerLinux(settings)
+    case 'darwin':
+      return new ProcessHandlerMac(settings)
+    default:
+      return new ProcessHandlerUnsupported(settings, os.platform())
+  }
 }
 
-export default new ProcessManager(processManager)
+export default new ProcessManager(createProcessHandler())

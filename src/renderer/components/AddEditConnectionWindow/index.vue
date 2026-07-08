@@ -87,12 +87,26 @@
           </div>
 
           <h1 class="section-title">{{ $t('connectionForm.local') }}</h1>
-          <div class="form-item">
+          <div v-if="usesDriveLetters" class="form-item">
             <label>{{ $t('connectionForm.driveLetter') }}</label>
             <select v-model="conn.mountPoint">
               <option value="auto">{{ $t('connectionForm.autoDrive') }}</option>
               <option v-for="drive in drives" :value="drive + ':'" :key="drive">{{drive}}:</option>
             </select>
+          </div>
+          <div v-else class="form-item">
+            <label>{{ $t('connectionForm.mountPath') }}</label>
+            <div class="form-row">
+              <div class="form-item">
+                <input type="text" :placeholder="$t('connectionForm.mountPathPlaceholder')" v-model="conn.mountPoint">
+              </div>
+              <div class="form-item" style="flex: 0">
+                <button class="btn icon-btn" @click="selectMountPath" v-tooltip="$t('connectionForm.selectMountPath')">
+                  <Icon icon="openFolder"/>
+                </button>
+              </div>
+            </div>
+            <p class="mount-hint">{{ $t('connectionForm.autoMountPath', { path: autoMountPath }) }}</p>
           </div>
         </Tab>
         <Tab :label="$t('connectionForm.advanced')" class="advanced-tab">
@@ -128,6 +142,7 @@ import SwitchLabel from '@/components/SwitchLabel.vue'
 import CustomCmdlOptions from './CustomCmdlOptions.vue'
 import Icon from '../Icon.vue'
 import SecretManager from '@/SecretManager.js'
+import { currentPlatform, getAutoMountPoint, usesDriveLetters } from '@/platform/index.js'
 
 export default {
   name: 'add-edit-connection-window',
@@ -150,6 +165,10 @@ export default {
       this.conn.advanced.customCmdlOptions =
         this.conn.advanced.customCmdlOptions.filter(a => a.name !== '')
 
+      if (!this.usesDriveLetters && !String(this.conn.mountPoint || '').trim()) {
+        this.conn.mountPoint = 'auto'
+      }
+
       if (!await this.prepareSecretsBeforeSave()) {
         return
       }
@@ -165,7 +184,7 @@ export default {
 
     authTypeChange () {
       this.conn.password = ''
-      this.conn.keyFile = process.env.USERPROFILE + '\\.ssh\\id_rsa'
+      this.conn.keyFile = currentPlatform.defaultKeyFile
     },
 
     async selectPrivateKey () {
@@ -173,6 +192,14 @@ export default {
 
       if (file) {
         this.conn.keyFile = file
+      }
+    },
+
+    async selectMountPath () {
+      const directory = await ipcRenderer.invoke('dialog:select-mount-path')
+
+      if (directory) {
+        this.conn.mountPoint = directory
       }
     },
 
@@ -239,6 +266,7 @@ export default {
 
       title: this.$t('connectionForm.addTitle'),
       drives: 'DEFGHIJKLMNOPQRSTUVWXYZ',
+      usesDriveLetters: usesDriveLetters(),
 
       conn: {
         uuid: uuid(),
@@ -250,9 +278,9 @@ export default {
         authType: 'password',
         password: '',
         secrets: {},
-        keyFile: process.env.USERPROFILE + '\\.ssh\\id_rsa',
+        keyFile: currentPlatform.defaultKeyFile,
         key: '',
-        mountPoint: 'auto',
+        mountPoint: usesDriveLetters() ? 'auto' : '',
         status: 'disconnected',
         pid: 0,
         advanced: {
@@ -265,6 +293,12 @@ export default {
     }
   },
 
+  computed: {
+    autoMountPath () {
+      return getAutoMountPoint(this.conn)
+    }
+  },
+
   mounted () {
     if (this.$route.name === 'edit-connection') {
       this.isEditingMode = true
@@ -274,6 +308,10 @@ export default {
       this.conn = JSON.parse(JSON.stringify(this.$store.state.Data.connections.find(a => a.uuid === this.$route.params.uuid)))
       this.conn.password = ''
       this.conn.secrets = this.conn.secrets || {}
+
+      if (!this.usesDriveLetters && this.conn.mountPoint === 'auto') {
+        this.conn.mountPoint = ''
+      }
     }
   }
 }
@@ -350,6 +388,13 @@ export default {
     fill: var(--app-primary);
     flex: 0 0 15px;
     margin-top: 2px;
+  }
+
+  .mount-hint {
+    margin: 8px 0 0;
+    color: var(--app-muted);
+    font-size: 12px;
+    line-height: 1.35;
   }
 }
 </style>
