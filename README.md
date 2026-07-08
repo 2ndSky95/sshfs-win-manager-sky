@@ -1,8 +1,8 @@
 # SSHFS-Win Manager Evo
 
-Interface graphique Windows pour monter des dossiers distants via SSHFS-Win.
+Interface graphique multi-plateforme pour monter des dossiers distants SSH/SFTP avec SSHFS.
 
-SSHFS-Win Manager Evo est un fork modernisé de [SSHFS-Win Manager](https://github.com/evsar3/sshfs-win-manager), créé à l'origine par Evandro Araujo. Cette édition ajoute une interface revue, de nouveaux modes d'authentification, des outils de gestion des connexions et plusieurs corrections adaptées aux versions récentes de Windows.
+SSHFS-Win Manager Evo est un fork modernisé de [SSHFS-Win Manager](https://github.com/evsar3/sshfs-win-manager), créé à l'origine par Evandro Araujo. Cette édition ajoute une interface revue, de nouveaux modes d'authentification, des outils de gestion des connexions et une préparation multi-OS : Windows reste supporté, Linux est disponible en test, et macOS arrive bientôt.
 
 ## Aperçu
 
@@ -22,17 +22,19 @@ Ajout d'une connexion :
 
 ## Fonctionnalités
 
-- Montage de dossiers distants SSH/SFTP en lecteur Windows via SSHFS-Win.
+- Montage de dossiers distants SSH/SFTP via SSHFS.
+- Support Windows via SSHFS-Win, Linux via `sshfs`, et préparation macOS via macFUSE/SSHFS.
 - Gestion de plusieurs connexions avec favoris, recherche et tri.
 - Fiche détaillée par connexion avec statut, host, port, utilisateur, chemin distant et point de montage.
 - Icône personnalisable par connexion, affichée dans la liste et dans la fiche détail.
-- Attribution automatique d'une lettre de lecteur libre avec `Auto (next free letter)`.
+- Attribution automatique d'une lettre de lecteur libre sous Windows.
+- Points de montage automatiques sous Linux et macOS.
 - Copie rapide d'une commande `ssh` équivalente pour ouvrir la connexion dans un terminal.
 - Import/export JSON des connexions.
 - Import de l'ancienne configuration SSHFS-Win Manager depuis `%APPDATA%\sshfs-win-manager\vuex.json`.
 - Interface multilingue avec sélection de la langue dans les paramètres.
 - Mode debug intégré avec logs de connexion.
-- Démarrage avec Windows et fonctionnement dans la zone de notification.
+- Démarrage avec l'OS et fonctionnement dans la zone de notification.
 - Connexion automatique au démarrage, exécutée de façon séquentielle pour éviter les collisions.
 - Support IPv6 dans les cibles SSHFS.
 - Paramètres avancés SSHFS via options de ligne de commande personnalisées.
@@ -78,14 +80,14 @@ Avant d'utiliser l'application sous Windows, installez :
 
 SSHFS-Win Manager Evo ne remplace pas SSHFS-Win : il fournit l'interface graphique et pilote `sshfs.exe`.
 
-Pour preparer un test sous Linux ou macOS, consultez [install.md](install.md).
+Pour préparer un test sous Linux ou macOS, consultez [install.md](install.md).
 
 ## Installation
 
-1. Installez WinFsp et SSHFS-Win.
+1. Installez les prérequis SSHFS de votre OS.
 2. Installez ou compilez SSHFS-Win Manager Evo.
 3. Ajoutez une connexion.
-4. Choisissez une lettre de lecteur disponible.
+4. Choisissez une lettre de lecteur sous Windows ou un chemin de montage sous Linux/macOS.
 5. Cliquez sur `Connecter`.
 
 ## Langues
@@ -105,7 +107,9 @@ Les informations de développement, de build, de lint et de génération des ic�
 
 ## Notes importantes
 
-- Le mode `Auto (next free letter)` est géré par l'application : une vraie lettre libre est choisie avant le lancement de SSHFS-Win. L'application ne délègue pas la valeur `auto` à `sshfs.exe`.
+- Le mode `Auto (next free letter)` est géré par l'application sous Windows : une vraie lettre libre est choisie avant le lancement de SSHFS-Win.
+- Sous Linux, les points de montage automatiques sont créés sous `~/sshfs-win-manager-evo`.
+- Sous macOS, les points de montage automatiques sont prévus sous `~/Mounts/sshfs-win-manager-evo`. Le support macOS est en préparation.
 - Certaines authentifications interactives dépendent fortement de la configuration OpenSSH/PAM du serveur.
 - Pour les clés protégées par passphrase et les challenges PAM/OTP, l'application prépare les réponses avant de lancer SSHFS via `SSH_ASKPASS`.
 - Les images personnalisées de connexions sont stockées dans les données de configuration sous forme de data URL.
