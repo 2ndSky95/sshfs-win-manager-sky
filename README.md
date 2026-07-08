@@ -73,14 +73,41 @@ Important : si la passkey est perdue, les mots de passe chiffrés ne peuvent pas
 
 ## Prérequis
 
-Avant d'utiliser l'application sous Windows, installez :
+SSHFS-Win Manager Evo pilote le binaire SSHFS disponible sur votre système. Il faut donc installer les composants SSHFS/FUSE adaptés à votre OS avant de lancer une vraie connexion.
+
+### Windows
 
 - [WinFsp](https://winfsp.dev/)
 - [SSHFS-Win](https://github.com/billziss-gh/sshfs-win)
 
-SSHFS-Win Manager Evo ne remplace pas SSHFS-Win : il fournit l'interface graphique et pilote `sshfs.exe`.
+L'application pilote ensuite `sshfs.exe` et monte les dossiers distants comme des lecteurs Windows.
 
-Pour préparer un test sous Linux ou macOS, consultez [install.md](install.md).
+### Linux
+
+- `sshfs`
+- FUSE/fuse3
+
+Exemple Debian, Ubuntu, Linux Mint :
+
+```bash
+sudo apt update
+sudo apt install sshfs fuse3
+```
+
+Pour construire les paquets Linux depuis Ubuntu/Debian, installer aussi :
+
+```bash
+sudo apt install rpm
+```
+
+### macOS
+
+- [macFUSE](https://macfuse.github.io/)
+- SSHFS pour macFUSE
+
+macOS peut demander d'autoriser macFUSE dans `Réglages système` > `Confidentialité et sécurité`, puis de redémarrer.
+
+Le guide détaillé par OS est disponible dans [install.md](install.md).
 
 ## Installation
 
