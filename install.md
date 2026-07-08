@@ -4,6 +4,15 @@ Cette page liste ce qu'il faut installer avant de tester SSHFS-Win Manager Evo s
 
 L'application ne fournit pas le moteur SSHFS elle-meme : elle lance le binaire `sshfs` installe sur le systeme, puis utilise FUSE pour exposer le dossier distant comme un dossier local.
 
+## Sommaire
+
+- [Windows](#windows)
+- [Linux](#linux)
+- [macOS](#macos)
+- [Points de montage utilises par l'application](#points-de-montage-utilises-par-lapplication)
+- [Serveur distant](#serveur-distant)
+- [Sources utiles](#sources-utiles)
+
 ## Windows
 
 Sur Windows, installer :
