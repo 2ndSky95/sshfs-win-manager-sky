@@ -185,6 +185,7 @@ export default {
   notifications: {
     cannotConnect: 'Can’t connect to "{name}": {error}',
     passkeyInvalid: 'Invalid passkey: could not decrypt the password.',
+    passkeyUnlocked: 'Passkey accepted: secrets unlocked.',
     trayStillRunning: 'Program still running in the system tray',
     debugCopied: 'Debug output copied to clipboard',
     sshCommandCopied: 'SSH command copied to clipboard',

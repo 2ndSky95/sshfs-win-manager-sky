@@ -172,13 +172,20 @@ async function encryptSecret (value, settings = {}, mode = 'create') {
 }
 
 async function decryptSecret (payload, settings = {}) {
+  const wasLocked = !isUnlocked()
   const activePasskey = await getPasskey(settings, 'unlock')
 
   if (!activePasskey) {
     return null
   }
 
-  return decryptWithPasskey(payload, activePasskey)
+  const decrypted = decryptWithPasskey(payload, activePasskey)
+
+  if (wasLocked) {
+    ipcRenderer.send('passkey:unlocked')
+  }
+
+  return decrypted
 }
 
 export default {

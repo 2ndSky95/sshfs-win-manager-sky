@@ -467,6 +467,10 @@
         </div>
       </section>
     </div>
+
+    <div v-if="notificationToast" class="app-toast" :class="notificationToast.type">
+      {{ notificationToast.text }}
+    </div>
   </Window>
 </template>
 
@@ -1277,17 +1281,25 @@ export default {
     showRunningInBackgroundNotification () {
       if (!this.runningInBackgroundNotificationShowed) {
         if (this.$store.state.Settings.settings.displayTrayMessageOnClose) {
-          this.notify(this.$t('notifications.trayStillRunning'))
-
           this.runningInBackgroundNotificationShowed = true
         }
       }
     },
 
-    notify (text) {
-      ipcRenderer.send('app:notify', {
-        body: text
-      })
+    notify (text, icon = null) {
+      if (this.notificationTimer) {
+        clearTimeout(this.notificationTimer)
+      }
+
+      this.notificationToast = {
+        text,
+        type: icon === 'error-icon' ? 'error' : 'info'
+      }
+
+      this.notificationTimer = setTimeout(() => {
+        this.notificationToast = null
+        this.notificationTimer = null
+      }, 4500)
     },
 
     getConnectionByPid (pid) {
@@ -1553,6 +1565,8 @@ export default {
       selectedConnectionUuid: null,
       draggedConnectionUuid: null,
       runningInBackgroundNotificationShowed: false,
+      notificationToast: null,
+      notificationTimer: null,
       debugOutput: '',
       appVersion: ''
     }
@@ -1580,6 +1594,10 @@ export default {
           }
         }
       }
+    })
+
+    ipcRenderer.on('passkey:unlocked', () => {
+      this.notify(this.$t('notifications.passkeyUnlocked'))
     })
 
     const originalConsoleLog = console.log.bind(console)
@@ -1676,6 +1694,28 @@ export default {
   background:
     radial-gradient(circle at 28% 0%, rgba(42, 119, 255, 0.2), transparent 34%),
     linear-gradient(135deg, var(--app-bg), var(--app-surface));
+}
+
+.app-toast {
+  position: fixed;
+  top: 46px;
+  right: 22px;
+  z-index: 50;
+  max-width: min(420px, calc(100vw - 44px));
+  padding: 12px 14px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-panel);
+  color: var(--app-text);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  line-height: 1.45;
+  font-size: 12px;
+  white-space: pre-line;
+}
+
+.app-toast.error {
+  border-color: color-mix(in srgb, #ff6b6b 60%, var(--app-border));
+  background: color-mix(in srgb, #ff6b6b 14%, var(--app-panel));
 }
 
 .main-shell.compact-mode {

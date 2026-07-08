@@ -185,6 +185,7 @@ export default {
   notifications: {
     cannotConnect: 'Impossible de se connecter à "{name}" : {error}',
     passkeyInvalid: 'Passkey invalide : impossible de déchiffrer le mot de passe.',
+    passkeyUnlocked: 'Passkey validée : secrets déverrouillés.',
     trayStillRunning: 'Le programme continue de tourner dans la zone de notification',
     debugCopied: 'Logs copiés dans le presse-papiers',
     sshCommandCopied: 'Commande SSH copiée dans le presse-papiers',

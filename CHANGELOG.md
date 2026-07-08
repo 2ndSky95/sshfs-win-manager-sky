@@ -1,12 +1,16 @@
 # Changelog
 
 
+## 2.3.2
+
+- Ajout d'une notification interne quand la passkey déverrouille correctement les secrets.
+
 ## 2.3.1
 
 - Ajout de l'option de rétention passkey `1 jour`.
 - Augmentation de la hauteur de la popup passkey pour éviter les boutons tronqués.
 - Ajout du bouton réduire sur la fenêtre principale.
-- Correction du clic sur les notifications Windows pour restaurer l'application au lieu d'ouvrir la page par défaut Electron.
+- Remplacement des notifications Windows natives.
 
 ## 2.3.0
 

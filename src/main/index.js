@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, Tray, Notification, clipboard, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, Menu, Tray, clipboard, dialog, ipcMain, shell } from 'electron'
 import path from 'path'
 import { mkdir, readFile, writeFile } from 'fs/promises'
 import { existsSync } from 'fs'
@@ -150,24 +150,6 @@ ipcMain.on('window:hide-current', event => {
 ipcMain.on('window:minimize-current', event => {
   const win = getSenderWindow(event)
   if (win) win.minimize()
-})
-
-ipcMain.on('app:notify', (event, payload) => {
-  if (!Notification.isSupported()) {
-    return
-  }
-
-  const notification = new Notification({
-    title: 'SSHFS-Win Manager Evo',
-    body: typeof payload === 'string' ? payload : payload.body,
-    icon: getAppIconPath()
-  })
-
-  notification.on('click', () => {
-    showMainWindow()
-  })
-
-  notification.show()
 })
 
 ipcMain.handle('dialog:select-private-key', async () => {
@@ -336,6 +318,12 @@ ipcMain.on('passkey-prompt:response', (event, data) => {
       win.webContents.send('passkey-prompt:response', data)
     }
   })
+})
+
+ipcMain.on('passkey:unlocked', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('passkey:unlocked')
+  }
 })
 
 if (isSecondInstance) {
