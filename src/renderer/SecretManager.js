@@ -105,6 +105,8 @@ function getRetentionMs (settings = {}) {
       return 0
     case '1h':
       return 60 * 60 * 1000
+    case '1d':
+      return 24 * 60 * 60 * 1000
     case '2d':
       return 2 * 24 * 60 * 60 * 1000
     case '12h':
@@ -138,7 +140,7 @@ function requestPasskey (mode, settings = {}) {
       name: `passkey-prompt-window-${requestId}`,
       route: `#/passkey-prompt/${mode}/${requestId}`,
       options: {
-        height: mode === 'create' ? 360 : 270,
+        height: mode === 'create' ? 390 : 320,
         width: 430,
         useContentSize: true,
         frame: false,

@@ -1,7 +1,7 @@
 <template>
   <div class="window">
     <div class="header-container">
-      <Header :title="title" :closeAction="closeAction" @close="$emit('close')"/>
+      <Header :title="title" :closeAction="closeAction" :minimizable="minimizable" @close="$emit('close')"/>
     </div>
     <div class="content-container">
       <slot></slot>
@@ -30,6 +30,12 @@ export default {
       type: String,
       required: false,
       default: 'close'
+    },
+
+    minimizable: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   }
 }

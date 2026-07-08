@@ -1,5 +1,5 @@
 <template>
-  <Window title="SSHFS-Win Manager Evo" closeAction="hide" @close="showRunningInBackgroundNotification">
+  <Window title="SSHFS-Win Manager Evo" closeAction="hide" minimizable @close="showRunningInBackgroundNotification">
     <div class="main-shell" :class="{ 'compact-mode': appSettings.compactMode, 'detail-collapsed': isDetailPanelCollapsed }">
       <aside class="nav-rail">
         <div class="brand-mark">
@@ -218,6 +218,7 @@
                 <option value="always">{{ $t('settings.passkeyAlways') }}</option>
                 <option value="1h">{{ $t('settings.passkey1h') }}</option>
                 <option value="12h">{{ $t('settings.passkey12h') }}</option>
+                <option value="1d">{{ $t('settings.passkey1d') }}</option>
                 <option value="2d">{{ $t('settings.passkey2d') }}</option>
               </select>
             </label>

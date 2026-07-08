@@ -134,6 +134,11 @@ ipcMain.on('window:hide-current', event => {
   if (win) win.hide()
 })
 
+ipcMain.on('window:minimize-current', event => {
+  const win = getSenderWindow(event)
+  if (win) win.minimize()
+})
+
 ipcMain.handle('dialog:select-private-key', async () => {
   const result = await dialog.showOpenDialog({
     title: 'Select private key',
@@ -322,7 +327,7 @@ if (isSecondInstance) {
       useContentSize: true,
       frame: false,
       maximizable: true,
-      minimizable: false,
+      minimizable: true,
       resizable: true
     })
 

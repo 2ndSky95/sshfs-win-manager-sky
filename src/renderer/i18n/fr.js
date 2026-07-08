@@ -86,6 +86,7 @@ export default {
     passkeyAlways: 'Toujours demander',
     passkey1h: '1 heure',
     passkey12h: '12 heures',
+    passkey1d: '1 jour',
     passkey2d: '2 jours',
     startupWithOS: 'Démarrer avec Windows',
     displayTrayMessageOnClose: 'Message tray à la fermeture',
