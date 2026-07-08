@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.4.0
+
+- Préparation multi-OS :
+  - handlers séparés pour Windows, Linux et macOS
+  - points de montage par chemin local sous Linux et macOS
+  - points de montage automatiques sous `~/sshfs-win-manager-evo` sur Linux
+  - points de montage automatiques sous `~/Mounts/sshfs-win-manager-evo` sur macOS
+  - démontage Linux via `fusermount3`, `fusermount` ou `umount`
+  - démontage macOS via `diskutil unmount` ou `umount`
+- Ajout du packaging Linux AppImage, deb et rpm.
+- Ajout du packaging macOS dmg et zip.
+- Ajout des scripts de build par plateforme.
+- Ajout de la génération d'icône macOS `.icns`.
+- Ajout de la documentation d'installation Linux/macOS.
+- Ajout de `.nvmrc` et déclaration des versions Node/npm attendues.
 
 ## 2.3.2
 
