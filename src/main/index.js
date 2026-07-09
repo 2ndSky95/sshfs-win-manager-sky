@@ -47,8 +47,14 @@ function getAppIconPath () {
   return path.join(staticPath, isWindows ? 'app-icon.ico' : 'app-icon.png')
 }
 
-function getTrayIconPath () {
-  return path.join(staticPath, isWindows ? 'tray-icon.ico' : 'tray-icon.png')
+const trayStatusIcons = {
+  idle: 'tray-idle.png',
+  connected: 'tray-connected.png',
+  error: 'tray-error.png'
+}
+
+function getTrayIconPath (status = 'idle') {
+  return path.join(staticPath, trayStatusIcons[status] || trayStatusIcons.idle)
 }
 
 function spawnDetached (file, args) {
@@ -500,6 +506,12 @@ ipcMain.on('passkey-prompt:response', (event, data) => {
       win.webContents.send('passkey-prompt:response', data)
     }
   })
+})
+
+ipcMain.on('tray:set-status', (event, status) => {
+  if (tray && !tray.isDestroyed() && trayStatusIcons[status]) {
+    tray.setImage(getTrayIconPath(status))
+  }
 })
 
 ipcMain.on('tray:display-close-message', (event, payload) => {

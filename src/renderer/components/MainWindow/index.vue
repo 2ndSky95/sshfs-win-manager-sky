@@ -3,7 +3,7 @@
       <header class="tab-bar">
         <div class="brand">
           <div class="brand-mark">
-            <Icon icon="sshfsLogo"/>
+            <img class="brand-logo" :src="logoSky" alt="">
           </div>
           <div class="brand-text">
             <strong>SSHFS-Win</strong>
@@ -388,7 +388,8 @@
 
       <section v-else-if="activeSection === 'about'" class="tab-workspace">
         <div class="workspace-card about-workspace">
-          <header class="workspace-header">
+          <header class="workspace-header about-header">
+            <img class="about-logo" :src="logoSky" alt="SSHFS-Win Manager Sky">
             <div>
               <h1>SSHFS-Win Manager Sky</h1>
               <p>{{ $t('about.versionLine', { version: appVersion }) }}</p>
@@ -441,6 +442,7 @@
           <span class="warning"><span class="status-dot"></span> {{ $t('detail.busyCount', { count: busyConnections.length }) }}</span>
         </div>
         <div class="status-right">
+          <img class="status-app-icon" :src="statusIcon" alt="">
           <span class="success"><span class="status-dot"></span> {{ $t('app.serviceActive') }}</span>
         </div>
       </footer>
@@ -477,6 +479,11 @@ import { currentPlatform, getConnectionMountPoint } from '@/platform/index.js'
 
 import Icon from '@/components/Icon.vue'
 import AddEditConnectionWindow from '@/components/AddEditConnectionWindow/index.vue'
+
+import logoSky from '@/assets/logo-sky.png'
+import statusConnectedIcon from '@/assets/status-connected.png'
+import statusIdleIcon from '@/assets/status-idle.png'
+import statusErrorIcon from '@/assets/status-error.png'
 
 function createDemoConnections () {
   const names = [
@@ -1441,6 +1448,22 @@ export default {
         this.notificationToast = null
         this.notificationTimer = null
       }, 4500)
+
+      if (icon === 'error-icon') {
+        this.flashTrayError()
+      }
+    },
+
+    flashTrayError () {
+      if (this.trayErrorTimer) {
+        clearTimeout(this.trayErrorTimer)
+      }
+
+      this.trayErrorActive = true
+      this.trayErrorTimer = setTimeout(() => {
+        this.trayErrorActive = false
+        this.trayErrorTimer = null
+      }, 10000)
     },
 
     getConnectionByPid (pid) {
@@ -1579,6 +1602,22 @@ export default {
       return this.$store.state.Data.connections
     },
 
+    trayStatus () {
+      if (this.trayErrorActive) {
+        return 'error'
+      }
+
+      return this.connections.some(conn => conn.status === 'connected') ? 'connected' : 'idle'
+    },
+
+    statusIcon () {
+      return {
+        connected: statusConnectedIcon,
+        idle: statusIdleIcon,
+        error: statusErrorIcon
+      }[this.trayStatus]
+    },
+
     filteredConnections () {
       const query = this.searchText.trim().toLowerCase()
 
@@ -1641,6 +1680,13 @@ export default {
   },
 
   watch: {
+    trayStatus: {
+      handler (status) {
+        ipcRenderer.send('tray:set-status', status)
+      },
+      immediate: true
+    },
+
     filteredConnections: {
       handler (connections) {
         if (!connections.length) {
@@ -1707,6 +1753,9 @@ export default {
       runningInBackgroundNotificationShowed: false,
       notificationToast: null,
       notificationTimer: null,
+      trayErrorActive: false,
+      trayErrorTimer: null,
+      logoSky,
       passkeyConfirmVisible: false,
       passkeyConfirmResolve: null,
       connectionFormVisible: false,
@@ -1946,6 +1995,12 @@ export default {
   height: 18px;
 }
 
+.tab-bar .brand-logo {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
 .tab-item {
   display: flex;
   align-items: center;
@@ -2039,6 +2094,24 @@ export default {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.status-bar .status-app-icon {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+}
+
+.about-header.workspace-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.about-logo {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
 }
 
 .status-bar span {
