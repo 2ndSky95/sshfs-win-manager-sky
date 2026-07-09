@@ -9,34 +9,29 @@ A clean, single-window GUI for mounting remote SSH/SFTP folders as local Windows
 ## Screenshots
 
 <p align="center">
-  <img src="imgs/sky-connections.png" alt="Connections view with inline details" width="100%">
+  <img src="imgs/sky-connections.png" alt="Connections view with inline details" width="100%"><br>
+  <em>Connections — click a server to unfold its details and actions inline.</em>
 </p>
-
-*Connections — click a server to unfold its details and actions inline.*
 
 <p align="center">
-  <img src="imgs/sky-connection-form.png" alt="Add & edit connections inside the same window" width="100%">
+  <img src="imgs/sky-connection-form.png" alt="Add & edit connections inside the same window" width="100%"><br>
+  <em>Add & edit connections — opens inside the same window, no popups.</em>
 </p>
-
-*Add & edit connections — opens inside the same window, no popups.*
 
 <p align="center">
-  <img src="imgs/sky-settings.png" alt="Settings" width="100%">
+  <img src="imgs/sky-settings.png" alt="Settings" width="100%"><br>
+  <em>Settings — theme, language, tray behavior, passkey encryption, address blur.</em>
 </p>
-
-*Settings — theme, language, tray behavior, passkey encryption, address blur.*
 
 <p align="center">
-  <img src="imgs/sky-compact.png" alt="Compact mode" width="100%">
+  <img src="imgs/sky-compact.png" alt="Compact mode" width="100%"><br>
+  <em>Compact mode — 440 px wide with icon tabs, made to sit at the edge of your screen.</em>
 </p>
-
-*Compact mode — 440 px wide with icon tabs, made to sit at the edge of your screen.*
 
 <p align="center">
-  <img src="imgs/sky-themes.png" alt="Themes: Graphite, Classic dark, Classic light, Forest night" width="100%">
+  <img src="imgs/sky-themes.png" alt="Themes: Graphite, Classic dark, Classic light, Forest night" width="100%"><br>
+  <em>A few of the built-in themes — Graphite, Classic dark, Classic light and Forest night.</em>
 </p>
-
-*A few of the built-in themes — Graphite, Classic dark, Classic light and Forest night.*
 
 ## What's different from Evo
 
