@@ -63,7 +63,7 @@
           </div>
           <div v-show="conn.authType === 'password'" class="form-item">
             <label>{{ $t('connectionForm.password') }}</label>
-            <input type="password" v-model="conn.password">
+            <input type="password" v-model="conn.password" :placeholder="passwordPlaceholder">
           </div>
           <div v-show="conn.authType === 'key-file' || conn.authType === 'key-file-passphrase' || conn.authType === 'key-file-interactive' || conn.authType === 'key-file-passphrase-interactive'" class="form-row">
             <div class="form-item">
@@ -243,6 +243,11 @@ export default {
         return true
       }
 
+      // empty field while editing means "keep the stored password", not "delete it"
+      if (!this.conn.password && this.isEditingMode) {
+        this.conn.password = this.existingPlainPassword
+      }
+
       if (!this.conn.password) {
         return true
       }
@@ -289,6 +294,8 @@ export default {
   data () {
     return {
       isEditingMode: false,
+      existingPlainPassword: '',
+      hasStoredSecret: false,
 
       title: this.$t('connectionForm.addTitle'),
       drives: 'DEFGHIJKLMNOPQRSTUVWXYZ',
@@ -322,6 +329,19 @@ export default {
   computed: {
     autoMountPath () {
       return getAutoMountPoint(this.conn)
+    },
+
+    passwordPlaceholder () {
+      // '#' = stored encrypted (passkey), '*' = stored in plain text
+      if (this.hasStoredSecret) {
+        return '########'
+      }
+
+      if (this.existingPlainPassword) {
+        return '********'
+      }
+
+      return ''
     }
   },
 
@@ -334,6 +354,8 @@ export default {
       this.title = this.$t('connectionForm.editTitle')
 
       this.conn = JSON.parse(JSON.stringify(this.$store.state.Data.connections.find(a => a.uuid === editUuid)))
+      this.existingPlainPassword = this.conn.password || ''
+      this.hasStoredSecret = !!(this.conn.secrets && this.conn.secrets.password)
       this.conn.password = ''
       this.conn.secrets = this.conn.secrets || {}
 
