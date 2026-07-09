@@ -27,10 +27,16 @@ A clean, single-window GUI for mounting remote SSH/SFTP folders as local Windows
 *Settings — theme, language, tray behavior, passkey encryption, address blur.*
 
 <p align="center">
-  <img src="imgs/sky-compact.png" alt="Compact mode" width="60%">
+  <img src="imgs/sky-compact.png" alt="Compact mode" width="100%">
 </p>
 
 *Compact mode — 440 px wide with icon tabs, made to sit at the edge of your screen.*
+
+<p align="center">
+  <img src="imgs/sky-themes.png" alt="Themes: Graphite, Classic dark, Classic light, Forest night" width="100%">
+</p>
+
+*A few of the built-in themes — Graphite, Classic dark, Classic light and Forest night.*
 
 ## What's different from Evo
 
@@ -42,7 +48,7 @@ Evo modernized the original app; Sky rethinks how it looks and feels:
 - **Optional password encryption.** The passkey can be switched on or off in Settings — your choice between convenience and encrypted storage.
 - **Privacy on screen.** Optionally blur server addresses in the UI (hover to reveal) — handy for screenshots and screen sharing.
 - **Tray control.** Choose whether the app starts hidden in the tray with Windows, and get a real notification when closing to tray.
-- **More languages.** German, Spanish, Italian and Chinese added to English and French.
+- **More languages.** English, French, German, Spanish, Italian and Chinese (default is English).
 - **Seamless switch.** On first start, your Evo connections and settings are migrated automatically.
 
 ## Features
