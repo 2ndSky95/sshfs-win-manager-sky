@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, Notification, Tray, clipboard, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, Menu, Notification, Tray, clipboard, dialog, ipcMain, nativeTheme, shell } from 'electron'
 import path from 'path'
 import { mkdir, readFile, writeFile } from 'fs/promises'
 import { existsSync, cpSync } from 'fs'
@@ -47,14 +47,23 @@ function getAppIconPath () {
   return path.join(staticPath, isWindows ? 'app-icon.ico' : 'app-icon.png')
 }
 
-const trayStatusIcons = {
-  idle: 'tray-idle.png',
-  connected: 'tray-connected.png',
-  error: 'tray-error.png'
-}
+const trayStatuses = ['idle', 'connected', 'error']
+let currentTrayStatus = 'idle'
 
 function getTrayIconPath (status = 'idle') {
-  return path.join(staticPath, trayStatusIcons[status] || trayStatusIcons.idle)
+  // white icons for the dark taskbar, black icons when Windows runs in light mode
+  const color = nativeTheme.shouldUseDarkColors ? 'white' : 'black'
+  const safeStatus = trayStatuses.includes(status) ? status : 'idle'
+
+  return path.join(staticPath, `tray-${safeStatus}-${color}.png`)
+}
+
+function updateTrayIcon (status = currentTrayStatus) {
+  currentTrayStatus = trayStatuses.includes(status) ? status : 'idle'
+
+  if (tray && !tray.isDestroyed()) {
+    tray.setImage(getTrayIconPath(currentTrayStatus))
+  }
 }
 
 function spawnDetached (file, args) {
@@ -509,9 +518,11 @@ ipcMain.on('passkey-prompt:response', (event, data) => {
 })
 
 ipcMain.on('tray:set-status', (event, status) => {
-  if (tray && !tray.isDestroyed() && trayStatusIcons[status]) {
-    tray.setImage(getTrayIconPath(status))
-  }
+  updateTrayIcon(status)
+})
+
+nativeTheme.on('updated', () => {
+  updateTrayIcon()
 })
 
 ipcMain.on('tray:display-close-message', (event, payload) => {

@@ -1981,8 +1981,8 @@ export default {
 
 .tab-bar .brand-logo {
   display: block;
-  width: 30px;
-  height: 30px;
+  width: 25px;
+  height: 25px;
   flex: 0 0 auto;
   background: var(--app-primary);
   mask-repeat: no-repeat;
