@@ -23,11 +23,14 @@ class ProcessHandlerWin {
         conn.preferredMountPoint = mountPoint
       }
 
+      // sshfs chokes on an empty -ovolname=, so skip the option when the connection has no name
+      const volname = String(conn.name || '').trim().substr(0, 32)
+
       let cmdArgs = [
         `${conn.user}@${this.getRemoteHost(conn.host)}:${conn.folder}`,
         mountPoint,
         `-p${conn.port}`,
-        `-ovolname=${conn.name.substr(0, 32)}`,
+        ...(volname ? [`-ovolname=${volname}`] : []),
         '-odebug',
         '-ologlevel=debug1',
         '-oStrictHostKeyChecking=no',
