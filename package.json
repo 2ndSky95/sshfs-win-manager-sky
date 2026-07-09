@@ -35,10 +35,12 @@
   "build": {
     "productName": "SSHFS-Win Manager Sky",
     "appId": "de.4-sky.apps.sshfs-win-manager-sky",
+    "executableName": "sshfs-win-manager-sky",
     "artifactName": "sshfs-win-manager-sky-v${version}-${os}-${arch}.${ext}",
     "nsis": {
       "oneClick": true,
       "installerIcon": "build/icons/setup-icon.ico",
+      "shortcutName": "SSHFS-Win Manager Sky",
       "uninstallDisplayName": "SSHFS-Win Manager Sky"
     },
     "directories": {
@@ -80,7 +82,7 @@
       ]
     },
     "dmg": {
-      "artifactName": "sshfs-win-manager-evo-v${version}-${arch}.${ext}"
+      "artifactName": "sshfs-win-manager-sky-v${version}-${arch}.${ext}"
     }
   },
   "dependencies": {

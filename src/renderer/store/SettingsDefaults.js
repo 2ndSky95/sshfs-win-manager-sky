@@ -4,7 +4,9 @@ import { defaultLocale, normalizeLocale } from '@/i18n/locales.js'
 const defaultSettings = {
   sshfsBinary: currentPlatform.sshfsBinary,
   startupWithOS: true,
+  startInTray: true,
   displayTrayMessageOnClose: true,
+  blurAddresses: false,
   processTrackTimeout: 15,
   showDebugPanel: false,
   compactMode: false,
@@ -21,6 +23,8 @@ function normalizeSettings (settings = {}) {
     ...settings,
     sshfsBinary: settings.sshfsBinary || defaultSettings.sshfsBinary,
     startupWithOS: typeof settings.startupWithOS === 'boolean' ? settings.startupWithOS : defaultSettings.startupWithOS,
+    startInTray: typeof settings.startInTray === 'boolean' ? settings.startInTray : defaultSettings.startInTray,
+    blurAddresses: typeof settings.blurAddresses === 'boolean' ? settings.blurAddresses : defaultSettings.blurAddresses,
     displayTrayMessageOnClose: typeof settings.displayTrayMessageOnClose === 'boolean' ? settings.displayTrayMessageOnClose : defaultSettings.displayTrayMessageOnClose,
     processTrackTimeout: Number(settings.processTrackTimeout) || defaultSettings.processTrackTimeout,
     showDebugPanel: typeof settings.showDebugPanel === 'boolean' ? settings.showDebugPanel : defaultSettings.showDebugPanel,

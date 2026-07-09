@@ -1,9 +1,19 @@
-import { app, BrowserWindow, Menu, Tray, clipboard, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, Menu, Notification, Tray, clipboard, dialog, ipcMain, shell } from 'electron'
 import path from 'path'
 import { mkdir, readFile, writeFile } from 'fs/promises'
 import { existsSync, cpSync } from 'fs'
 import { spawn, execFile } from 'child_process'
 import { promisify } from 'util'
+
+const isWindows = process.platform === 'win32'
+const appName = 'SSHFS-Win Manager Sky'
+const appUserModelId = 'de.4-sky.apps.sshfs-win-manager-sky'
+
+app.setName(appName)
+
+if (isWindows) {
+  app.setAppUserModelId(appUserModelId)
+}
 
 const isSecondInstance = !app.requestSingleInstanceLock()
 const userDataPath = path.join(app.getPath('appData'), 'sshfs-win-manager-sky')
@@ -31,7 +41,6 @@ const staticPath = app.isPackaged
   ? path.join(process.resourcesPath, 'static')
   : path.join(__dirname, '../../static')
 
-const isWindows = process.platform === 'win32'
 const execFileAsync = promisify(execFile)
 
 function getAppIconPath () {
@@ -191,13 +200,8 @@ function getLegacyConnections (data) {
   return []
 }
 
-app.setName('SSHFS-Win Manager Sky')
 app.setPath('userData', userDataPath)
 const appStatePath = path.join(app.getPath('userData'), 'app-state.json')
-
-if (isWindows) {
-  app.setAppUserModelId('dev.fabricesimonet.apps.sshfs-win-manager-evo')
-}
 
 function safeLog (method, ...args) {
   try {
@@ -419,7 +423,7 @@ ipcMain.handle('app-state:save', async (event, state) => {
 ipcMain.handle('connections:export', async (event, payload) => {
   const result = await dialog.showSaveDialog(getSenderWindow(event), {
     title: 'Export connections',
-    defaultPath: `sshfs-win-manager-evo-connections-${new Date().toISOString().slice(0, 10)}.json`,
+    defaultPath: `sshfs-win-manager-sky-connections-${new Date().toISOString().slice(0, 10)}.json`,
     filters: [
       { name: 'JSON files', extensions: ['json'] }
     ]
@@ -498,6 +502,24 @@ ipcMain.on('passkey-prompt:response', (event, data) => {
   })
 })
 
+ipcMain.on('tray:display-close-message', (event, payload) => {
+  const text = payload && payload.text ? String(payload.text) : 'Program still running in the system tray'
+
+  if (isWindows && tray && typeof tray.displayBalloon === 'function') {
+    tray.displayBalloon({
+      title: app.getName(),
+      content: text,
+      iconType: 'info',
+      respectQuietTime: true
+    })
+  } else if (Notification.isSupported()) {
+    new Notification({
+      title: app.getName(),
+      body: text
+    }).show()
+  }
+})
+
 ipcMain.on('passkey:unlocked', () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('passkey:unlocked')
@@ -513,7 +535,7 @@ if (isSecondInstance) {
 
   app.on('ready', () => {
     mainWindow = createAppWindow('main-window', '', {
-      title: 'SSHFS-Win Manager Sky',
+      title: appName,
       height: 700,
       width: 680,
       useContentSize: true,
@@ -562,7 +584,7 @@ if (isSecondInstance) {
       }
     ])
 
-    tray.setToolTip('SSHFS-Win Manager Sky')
+    tray.setToolTip(appName)
     tray.setContextMenu(trayMenu)
 
     tray.on('click', () => {

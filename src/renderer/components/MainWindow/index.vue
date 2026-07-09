@@ -11,29 +11,29 @@
           </div>
         </div>
 
-        <button class="tab-item" :class="{ active: activeSection === 'favorites' }" type="button" @click="showFavorites">
+        <button class="tab-item" :class="{ active: activeSection === 'favorites' }" :disabled="connectionFormVisible" type="button" @click="showFavorites">
           <Icon icon="star"/>
           <span class="tab-label">{{ $t('nav.favorites') }}</span>
         </button>
 
-        <button class="tab-item" :class="{ active: activeSection === 'connections' }" type="button" @click="showConnections">
+        <button class="tab-item" :class="{ active: activeSection === 'connections' }" :disabled="connectionFormVisible" type="button" @click="showConnections">
           <Icon icon="sshfsFolder"/>
           <span class="tab-label">{{ $t('nav.connections') }}</span>
         </button>
 
-        <button class="tab-item" :class="{ active: activeSection === 'settings' }" type="button" @click="showSettings">
+        <button class="tab-item" :class="{ active: activeSection === 'settings' }" :disabled="connectionFormVisible" type="button" @click="showSettings">
           <Icon icon="settings"/>
           <span class="tab-label">{{ $t('nav.settings') }}</span>
         </button>
 
-        <button v-if="appSettings.showDebugPanel" class="tab-item" :class="{ active: activeSection === 'debug' }" type="button" @click="showDebug">
+        <button v-if="appSettings.showDebugPanel" class="tab-item" :class="{ active: activeSection === 'debug' }" :disabled="connectionFormVisible" type="button" @click="showDebug">
           <span class="terminal-glyph">&gt;_</span>
           <span class="tab-label">Debug</span>
         </button>
 
         <div class="tab-spacer"></div>
 
-        <button class="tab-item" :class="{ active: activeSection === 'about' }" type="button" @click="showAbout">
+        <button class="tab-item" :class="{ active: activeSection === 'about' }" :disabled="connectionFormVisible" type="button" @click="showAbout">
           <Icon icon="help"/>
           <span class="tab-label">{{ $t('nav.about') }}</span>
         </button>
@@ -118,7 +118,7 @@
                 <span>
                   <b>{{ mountPointLabel(conn) }}</b>
                   <span class="connection-target">
-                    {{ conn.host }}
+                    <span :class="{ 'blur-secret': appSettings.blurAddresses }">{{ conn.host }}</span>
                     <i>&middot;</i>
                     {{ conn.folder || '/' }}
                   </span>
@@ -200,7 +200,7 @@
             <div class="info-panel">
               <div class="info-row">
                 <span>{{ $t('detail.address') }}</span>
-                <strong>{{ conn.host }}</strong>
+                <strong :class="{ 'blur-secret': appSettings.blurAddresses }">{{ conn.host }}</strong>
               </div>
               <div class="info-row">
                 <span>{{ $t('detail.port') }}</span>
@@ -308,10 +308,20 @@
                   <span class="switch-track"></span>
                   <span class="toggle-text">{{ $t('settings.startupWithOS') }}</span>
                 </label>
+                <label class="settings-toggle" :class="{ 'is-disabled': !settingsForm.startupWithOS }">
+                  <input v-model="settingsForm.startInTray" type="checkbox" :disabled="!settingsForm.startupWithOS">
+                  <span class="switch-track"></span>
+                  <span class="toggle-text">{{ $t('settings.startInTray') }}</span>
+                </label>
                 <label class="settings-toggle">
                   <input v-model="settingsForm.displayTrayMessageOnClose" type="checkbox">
                   <span class="switch-track"></span>
                   <span class="toggle-text">{{ $t('settings.displayTrayMessageOnClose') }}</span>
+                </label>
+                <label class="settings-toggle">
+                  <input v-model="settingsForm.blurAddresses" type="checkbox">
+                  <span class="switch-track"></span>
+                  <span class="toggle-text">{{ $t('settings.blurAddresses') }}</span>
                 </label>
                 <label class="settings-toggle">
                   <input v-model="settingsForm.showDebugPanel" type="checkbox">
@@ -709,9 +719,7 @@ export default {
 
       ipcRenderer.invoke('app:set-login-item-settings', {
         openAtLogin: settings.startupWithOS,
-        args: [
-          '--systray'
-        ]
+        args: settings.startInTray ? ['--systray'] : []
       }).catch(() => {})
     },
 
@@ -1412,6 +1420,9 @@ export default {
       if (!this.runningInBackgroundNotificationShowed) {
         if (this.$store.state.Settings.settings.displayTrayMessageOnClose) {
           this.runningInBackgroundNotificationShowed = true
+          ipcRenderer.send('tray:display-close-message', {
+            text: this.$t('notifications.trayStillRunning')
+          })
         }
       }
     },
@@ -1647,7 +1658,7 @@ export default {
 
   data () {
     return {
-      activeSection: 'connections',
+      activeSection: 'favorites',
       expandedConnectionUuid: null,
       listMode: 'none',
       sortMode: 'manual',
@@ -1958,6 +1969,21 @@ export default {
 .tab-item.active {
   color: var(--app-primary);
   background: color-mix(in srgb, var(--app-primary) 12%, transparent);
+}
+
+.tab-item:disabled {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+
+.blur-secret {
+  filter: blur(4px);
+  transition: filter 140ms;
+}
+
+.blur-secret:hover {
+  filter: none;
 }
 
 .tab-content {
@@ -3021,16 +3047,6 @@ export default {
   padding: 6px 4px 0;
 }
 
-.sort-select,
-.field select {
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PSc2JyB2aWV3Qm94PScwIDAgMTAgNic+PHBhdGggZD0nTTEgMWw0IDQgNC00JyBmaWxsPSdub25lJyBzdHJva2U9JyM5NDljYWInIHN0cm9rZS13aWR0aD0nMS42JyBzdHJva2UtbGluZWNhcD0ncm91bmQnLz48L3N2Zz4=");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 32px;
-}
-
 .edit-toggle.icon-only {
   width: 46px;
   flex: 0 0 auto;
@@ -3250,6 +3266,12 @@ input[type='number']::-webkit-inner-spin-button {
 
 .settings-toggle:hover {
   background: color-mix(in srgb, var(--app-text) 6%, transparent);
+}
+
+.settings-toggle.is-disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
 }
 
 .settings-toggle input {

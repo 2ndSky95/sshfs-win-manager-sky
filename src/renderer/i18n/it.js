@@ -102,6 +102,8 @@ export default {
     passkey2d: '2 giorni',
     startupWithOS: 'Avvia con Windows',
     displayTrayMessageOnClose: 'Avviso nella tray alla chiusura',
+    startInTray: 'Avvia nella tray',
+    blurAddresses: 'Sfoca gli indirizzi dei server',
     showDebugPanel: 'Mostra pannello di debug',
     compactMode: 'Modalità compatta',
     demoMode: 'Modalità demo',

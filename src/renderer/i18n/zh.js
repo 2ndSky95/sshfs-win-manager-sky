@@ -102,6 +102,8 @@ export default {
     passkey2d: '2 天',
     startupWithOS: '随 Windows 启动',
     displayTrayMessageOnClose: '关闭时显示托盘提示',
+    startInTray: '启动时最小化到托盘',
+    blurAddresses: '模糊服务器地址',
     showDebugPanel: '显示调试面板',
     compactMode: '紧凑模式',
     demoMode: '演示模式',

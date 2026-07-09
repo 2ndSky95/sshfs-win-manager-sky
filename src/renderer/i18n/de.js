@@ -102,6 +102,8 @@
     passkey2d: '2 Tage',
     startupWithOS: 'Mit Windows starten',
     displayTrayMessageOnClose: 'Tray-Hinweis beim Schließen',
+    startInTray: 'Im Tray starten',
+    blurAddresses: 'Server-Adressen unscharf anzeigen',
     showDebugPanel: 'Debug-Panel anzeigen',
     compactMode: 'Kompaktmodus',
     demoMode: 'Demomodus',
