@@ -1,13 +1,14 @@
 {
-  "name": "sshfs-win-manager-evo",
-  "version": "2.4.2",
-  "author": "Fabrice Simonet <fabrice@emulsion.io>",
+  "name": "sshfs-win-manager-sky",
+  "version": "2.5.0",
+  "author": "Sky (https://4-sky.de)",
   "contributors": [
+    "Fabrice Simonet <fabrice@emulsion.io>",
     "Evandro Araujo <evandroprogram@gmail.com>"
   ],
-  "description": "A GUI for SSHFS-Win (https://github.com/billziss-gh/sshfs-win)",
+  "description": "A GUI for SSHFS-Win (https://github.com/billziss-gh/sshfs-win) - Sky Edition, based on SSHFS-Win Manager Evo",
   "license": "MIT",
-  "desktopName": "dev.fabricesimonet.apps.sshfs-win-manager-evo",
+  "desktopName": "de.4-sky.apps.sshfs-win-manager-sky",
   "main": "./out/main/index.js",
   "engines": {
     "node": "^22.18.0 || >=24.11.0",
@@ -32,13 +33,13 @@
     "postinstall": "npm run lint:fix"
   },
   "build": {
-    "productName": "SSHFS-Win Manager Evo",
-    "appId": "dev.fabricesimonet.apps.sshfs-win-manager-evo",
-    "artifactName": "sshfs-win-manager-evo-v${version}-${os}-${arch}.${ext}",
+    "productName": "SSHFS-Win Manager Sky",
+    "appId": "de.4-sky.apps.sshfs-win-manager-sky",
+    "artifactName": "sshfs-win-manager-sky-v${version}-${os}-${arch}.${ext}",
     "nsis": {
       "oneClick": true,
       "installerIcon": "build/icons/setup-icon.ico",
-      "uninstallDisplayName": "SSHFS-Win Manager Evo"
+      "uninstallDisplayName": "SSHFS-Win Manager Sky"
     },
     "directories": {
       "output": "build"
@@ -54,7 +55,7 @@
     ],
     "win": {
       "icon": "build/icons/app-icon.ico",
-      "artifactName": "sshfs-win-manager-evo-setup-v${version}.${ext}",
+      "artifactName": "sshfs-win-manager-sky-setup-v${version}.${ext}",
       "target": [
         "nsis"
       ]

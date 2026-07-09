@@ -23,6 +23,10 @@
     </div>
     <div v-else class="wrap loading">
       {{ $t('common.loading') }}
+
+      <div class="footer">
+        <button class="btn" @click="cancel">{{ $t('common.cancel') }}</button>
+      </div>
     </div>
   </Window>
 </template>
@@ -43,12 +47,18 @@ export default {
     return {
       password: '',
       keyPassphrase: '',
-      verificationCode: '',
-      conn: null
+      verificationCode: ''
     }
   },
 
   computed: {
+    conn () {
+      const data = this.$store.state.Data || {}
+      const connections = Array.isArray(data.connections) ? data.connections : []
+
+      return connections.find(a => a.uuid === this.$route.params.uuid) || null
+    },
+
     isKeyInteractive () {
       return this.conn && this.conn.authType === 'key-file-interactive'
     },
@@ -135,10 +145,6 @@ export default {
 
       return []
     }
-  },
-
-  mounted () {
-    this.conn = this.$store.state.Data.connections.find(a => a.uuid === this.$route.params.uuid)
   }
 }
 </script>

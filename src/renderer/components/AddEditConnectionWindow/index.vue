@@ -1,5 +1,6 @@
 <template>
-  <Window :title="title">
+  <div class="form-root">
+    <div class="form-title">{{ title }}</div>
     <div class="wrap">
       <Tabs>
         <Tab :label="$t('connectionForm.basic')" active>
@@ -124,18 +125,17 @@
       </Tabs>
 
       <div class="footer">
-        <button class="btn" @click="cancel">{{ $t('common.cancel') }}</button>
-        <button class="btn default" @click="save">{{ $t('common.save') }}</button>
+        <button class="btn cancel-action" @click="cancel">{{ $t('common.cancel') }}</button>
+        <button class="btn save-action" @click="save">{{ $t('common.save') }}</button>
       </div>
     </div>
-  </Window>
+  </div>
 </template>
 
 <script>
 import { ipcRenderer } from 'electron'
 import { v4 as uuid } from 'uuid'
 
-import Window from '@/components/Window/index.vue'
 import Tabs from '@/components/Tabs/Tabs.vue'
 import Tab from '@/components/Tabs/Tab.vue'
 import SwitchLabel from '@/components/SwitchLabel.vue'
@@ -147,8 +147,21 @@ import { currentPlatform, getAutoMountPoint, usesDriveLetters } from '@/platform
 export default {
   name: 'add-edit-connection-window',
 
+  props: {
+    embedded: {
+      type: Boolean,
+      default: false
+    },
+
+    editUuid: {
+      type: String,
+      default: null
+    }
+  },
+
+  emits: ['close'],
+
   components: {
-    Window,
     Tabs,
     Tab,
     SwitchLabel,
@@ -157,8 +170,16 @@ export default {
   },
 
   methods: {
+    closeForm () {
+      if (this.embedded) {
+        this.$emit('close')
+      } else {
+        ipcRenderer.send('window:close-current')
+      }
+    },
+
     cancel () {
-      ipcRenderer.send('window:close-current')
+      this.closeForm()
     },
 
     async save () {
@@ -179,7 +200,7 @@ export default {
         this.$store.dispatch('ADD_CONNECTION', this.conn)
       }
 
-      ipcRenderer.send('window:close-current')
+      this.closeForm()
     },
 
     authTypeChange () {
@@ -223,6 +244,11 @@ export default {
       }
 
       if (!this.conn.password) {
+        return true
+      }
+
+      if (this.$store.state.Settings.settings.passkeyEnabled === false) {
+        delete this.conn.secrets.password
         return true
       }
 
@@ -300,12 +326,14 @@ export default {
   },
 
   mounted () {
-    if (this.$route.name === 'edit-connection') {
+    const editUuid = this.editUuid || (this.$route.name === 'edit-connection' ? this.$route.params.uuid : null)
+
+    if (editUuid) {
       this.isEditingMode = true
 
       this.title = this.$t('connectionForm.editTitle')
 
-      this.conn = JSON.parse(JSON.stringify(this.$store.state.Data.connections.find(a => a.uuid === this.$route.params.uuid)))
+      this.conn = JSON.parse(JSON.stringify(this.$store.state.Data.connections.find(a => a.uuid === editUuid)))
       this.conn.password = ''
       this.conn.secrets = this.conn.secrets || {}
 
@@ -318,9 +346,27 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.wrap  {
+.form-root {
   height: 100%;
-  padding: 15px 20px 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.form-title {
+  flex: 0 0 auto;
+  padding: 14px 14px 4px;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--app-text);
+}
+
+.wrap  {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -336,35 +382,81 @@ export default {
 
   :deep(.tabs-selector) {
     flex: 0 0 auto;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    border-bottom: 0 !important;
+    padding: 2px 0 8px;
+  }
+
+  :deep(.tabs-selector .tab-selector) {
+    height: auto;
+    padding: 6px 16px;
+    border-radius: 7px;
+    color: var(--app-muted);
+    background: transparent;
+    font-size: 12px;
+    border-bottom: 0;
+  }
+
+  :deep(.tabs-selector .tab-selector:hover),
+  :deep(.tabs-selector .tab-selector--selected) {
+    color: var(--app-primary);
+    background: color-mix(in srgb, var(--app-primary) 12%, transparent);
+    border-bottom: 0;
+    font-weight: 600;
   }
 
   :deep(.tab) {
     min-height: 0;
     flex: 1;
     overflow: auto;
-    padding-right: 5px;
-    padding-bottom: 12px;
+    margin: 0 12px 12px;
+    border: 1px solid var(--app-border);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--app-surface) 60%, transparent);
+    padding: 12px 14px 14px;
   }
 
   .advanced-tab {
     overflow: auto;
     height: auto;
-    width: 100%;
-    padding-right: 5px;
   }
 
   .footer {
     flex: 0 0 auto;
     margin: 0;
-    padding: 14px 0 15px;
+    padding: 6px 12px;
     border-top: 1px solid var(--app-border);
-    background: var(--app-surface);
+    background: color-mix(in srgb, var(--app-surface) 86%, transparent);
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: space-between;
     gap: 10px;
 
     .btn {
       margin-bottom: 0;
+      min-width: 110px;
+    }
+
+    .cancel-action {
+      background: color-mix(in srgb, var(--app-danger, #d64545) 22%, transparent);
+      color: var(--app-text);
+    }
+
+    .cancel-action:hover {
+      background: var(--app-danger, #d64545);
+      color: #fff;
+    }
+
+    .save-action {
+      background: color-mix(in srgb, var(--app-success) 26%, transparent);
+      color: var(--app-text);
+    }
+
+    .save-action:hover {
+      background: var(--app-success);
+      color: #fff;
     }
   }
 
@@ -395,6 +487,15 @@ export default {
     color: var(--app-muted);
     font-size: 12px;
     line-height: 1.35;
+  }
+
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PSc2JyB2aWV3Qm94PScwIDAgMTAgNic+PHBhdGggZD0nTTEgMWw0IDQgNC00JyBmaWxsPSdub25lJyBzdHJva2U9JyM5NDljYWInIHN0cm9rZS13aWR0aD0nMS42JyBzdHJva2UtbGluZWNhcD0ncm91bmQnLz48L3N2Zz4=");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
   }
 }
 </style>

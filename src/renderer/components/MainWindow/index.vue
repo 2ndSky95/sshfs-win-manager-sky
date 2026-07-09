@@ -1,39 +1,64 @@
-<template>
-  <Window title="SSHFS-Win Manager Evo" closeAction="hide" minimizable @close="showRunningInBackgroundNotification">
-    <div class="main-shell" :class="{ 'compact-mode': appSettings.compactMode, 'detail-collapsed': isDetailPanelCollapsed }">
-      <aside class="nav-rail">
-        <div class="brand-mark">
-          <Icon icon="sshfsLogo"/>
+﻿<template>
+    <div class="main-shell" :class="{ 'compact-mode': appSettings.compactMode }">
+      <header class="tab-bar">
+        <div class="brand">
+          <div class="brand-mark">
+            <Icon icon="sshfsLogo"/>
+          </div>
+          <div class="brand-text">
+            <strong>SSHFS-Win</strong>
+            <span>Manager <em>Sky</em></span>
+          </div>
         </div>
 
-        <button class="nav-item" :class="{ active: activeSection === 'connections' }" type="button" @click="showConnections">
-          <Icon icon="sshfsFolder"/>
-          <span class="nav-label">{{ $t('nav.connections') }}</span>
-        </button>
-
-        <button class="nav-item" :class="{ active: activeSection === 'favorites' }" type="button" @click="showFavorites">
+        <button class="tab-item" :class="{ active: activeSection === 'favorites' }" type="button" @click="showFavorites">
           <Icon icon="star"/>
-          <span class="nav-label">{{ $t('nav.favorites') }}</span>
+          <span class="tab-label">{{ $t('nav.favorites') }}</span>
         </button>
 
-        <button class="nav-item" :class="{ active: activeSection === 'settings' }" type="button" @click="showSettings">
+        <button class="tab-item" :class="{ active: activeSection === 'connections' }" type="button" @click="showConnections">
+          <Icon icon="sshfsFolder"/>
+          <span class="tab-label">{{ $t('nav.connections') }}</span>
+        </button>
+
+        <button class="tab-item" :class="{ active: activeSection === 'settings' }" type="button" @click="showSettings">
           <Icon icon="settings"/>
-          <span class="nav-label">{{ $t('nav.settings') }}</span>
+          <span class="tab-label">{{ $t('nav.settings') }}</span>
         </button>
 
-        <button class="nav-item" :class="{ active: activeSection === 'about' }" type="button" @click="showAbout">
+        <button v-if="appSettings.showDebugPanel" class="tab-item" :class="{ active: activeSection === 'debug' }" type="button" @click="showDebug">
+          <span class="terminal-glyph">&gt;_</span>
+          <span class="tab-label">Debug</span>
+        </button>
+
+        <div class="tab-spacer"></div>
+
+        <button class="tab-item" :class="{ active: activeSection === 'about' }" type="button" @click="showAbout">
           <Icon icon="help"/>
-          <span class="nav-label">{{ $t('nav.about') }}</span>
+          <span class="tab-label">{{ $t('nav.about') }}</span>
         </button>
 
-        <div class="service-status">
-          <span class="status-dot"></span>
-          <strong>{{ $t('app.serviceActiveShort') }}</strong>
-          <span class="service-status-tooltip">{{ $t('app.serviceActive') }} · v{{ appVersion }}</span>
+        <div class="window-controls">
+          <button class="window-control" type="button" @click="windowMinimize">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M 7 23 L 25 23 L 25 25 L 7 25 Z "/></svg>
+          </button>
+          <button class="window-control close" type="button" @click="windowClose">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M 7.21875 5.78125 L 5.78125 7.21875 L 14.5625 16 L 5.78125 24.78125 L 7.21875 26.21875 L 16 17.4375 L 24.78125 26.21875 L 26.21875 24.78125 L 17.4375 16 L 26.21875 7.21875 L 24.78125 5.78125 L 16 14.5625 Z "/></svg>
+          </button>
         </div>
-      </aside>
+      </header>
 
-      <section class="connection-panel">
+      <main class="tab-content">
+      <section v-if="connectionFormVisible" class="form-tab">
+        <AddEditConnectionWindow
+          :key="connectionFormUuid || 'new-connection'"
+          embedded
+          :edit-uuid="connectionFormUuid"
+          @close="connectionFormVisible = false"
+        />
+      </section>
+
+      <section v-else-if="activeSection === 'connections' || activeSection === 'favorites'" class="connection-panel">
         <div class="panel-toolbar" :class="{ 'has-edit-toggle': sortMode === 'manual' }">
           <label class="search-box">
             <Icon icon="info"/>
@@ -42,12 +67,13 @@
 
           <button
             v-if="sortMode === 'manual'"
-            class="edit-toggle"
+            class="edit-toggle icon-only"
             :class="{ active: isEditModeEnabled }"
             type="button"
+            v-tooltip="isEditModeEnabled ? $t('list.editDone') : $t('list.editOrder')"
             @click="listMode = isEditModeEnabled ? 'none' : 'edit'"
           >
-            {{ isEditModeEnabled ? $t('list.editDone') : $t('list.editOrder') }}
+            <Icon icon="pen"/>
           </button>
 
           <select v-model="sortMode" class="sort-select" @change="handleSortModeChange">
@@ -61,17 +87,22 @@
           <Icon icon="sshfsFolder"/>
           <h1>{{ $t('list.emptyTitle') }}</h1>
           <p>{{ $t('list.emptyText') }}</p>
+          <div class="list-footer">
+            <button class="btn primary-action" type="button" @click="addNewConnection">
+              <Icon icon="plus"/>
+              {{ $t('detail.newConnection') }}
+            </button>
+          </div>
         </div>
 
         <div v-else class="connection-list">
+          <template v-for="conn in filteredConnections" :key="conn.uuid">
           <button
-            v-for="conn in filteredConnections"
-            :key="conn.uuid"
             type="button"
             class="connection-card"
-            :class="{ active: selectedConnection && selectedConnection.uuid === conn.uuid, connected: conn.status === 'connected' }"
+            :class="{ connected: conn.status === 'connected', expanded: expandedConnectionUuid === conn.uuid, favorite: conn.favorite }"
             :draggable="isEditModeEnabled"
-            @click="selectConnection(conn)"
+            @click="toggleExpandConnection(conn)"
             @dragstart="dragConnection(conn.uuid)"
             @dragover.prevent
             @drop="dropConnection(conn.uuid)"
@@ -83,7 +114,7 @@
 
             <span class="connection-main">
               <strong>{{ conn.name }}</strong>
-              <span class="connection-meta" :class="{ 'has-reorder': sortMode === 'manual' && isEditModeEnabled }">
+              <span class="connection-meta">
                 <span>
                   <b>{{ mountPointLabel(conn) }}</b>
                   <span class="connection-target">
@@ -92,207 +123,271 @@
                     {{ conn.folder || '/' }}
                   </span>
                 </span>
-
-                <span v-if="sortMode === 'manual' && isEditModeEnabled" class="reorder-actions">
-                  <button
-                    type="button"
-                    :disabled="!canMoveConnection(conn, -1)"
-                    v-tooltip="$t('list.moveUp')"
-                    @click.stop="moveConnection(conn, -1)"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    :disabled="!canMoveConnection(conn, 1)"
-                    v-tooltip="$t('list.moveDown')"
-                    @click.stop="moveConnection(conn, 1)"
-                  >
-                    ↓
-                  </button>
-                </span>
-
-                <span class="connection-state" :class="conn.status"></span>
-
-                <span class="quick-actions">
-                  <button
-                    type="button"
-                    class="round-action favorite"
-                    :class="{ active: conn.favorite }"
-                    v-tooltip="conn.favorite ? $t('list.removeFavorite') : $t('list.addFavorite')"
-                    @click.stop="toggleFavorite(conn)"
-                  >
-                    <Icon icon="star"/>
-                  </button>
-                  <button
-                    type="button"
-                    class="round-action open-folder"
-                    :disabled="conn.status !== 'connected'"
-                    v-tooltip="$t('common.openFolder')"
-                    @click.stop="openLocal(getLocalMountPath(conn))"
-                  >
-                    <Icon icon="openFolder"/>
-                  </button>
-                  <button
-                    type="button"
-                    class="round-action open-terminal"
-                    :disabled="conn.status !== 'connected'"
-                    v-tooltip="$t('common.openTerminal')"
-                    @click.stop="openTerminal(conn)"
-                  >
-                    <span>&gt;_</span>
-                  </button>
-                  <button
-                    v-if="conn.status === 'connected'"
-                    type="button"
-                    class="round-action primary"
-                    v-tooltip="$t('common.disconnect')"
-                    @click.stop="disconnect(conn)"
-                  >
-                    <Icon icon="plugConnected"/>
-                  </button>
-                  <button
-                    v-else
-                    type="button"
-                    class="round-action"
-                    :class="{ loading: conn.status === 'connecting' }"
-                    :disabled="conn.status === 'connecting' || conn.status === 'disconnecting'"
-                    v-tooltip="conn.status === 'connecting' ? $t('common.connecting') : $t('common.connect')"
-                    @click.stop="connect(conn)"
-                  >
-                    <Icon icon="plugDisconnected"/>
-                  </button>
-                </span>
               </span>
             </span>
+
+            <span class="quick-actions">
+              <span v-if="sortMode === 'manual' && isEditModeEnabled" class="reorder-actions">
+                <button
+                  type="button"
+                  :disabled="!canMoveConnection(conn, -1)"
+                  v-tooltip="$t('list.moveUp')"
+                  @click.stop="moveConnection(conn, -1)"
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  :disabled="!canMoveConnection(conn, 1)"
+                  v-tooltip="$t('list.moveDown')"
+                  @click.stop="moveConnection(conn, 1)"
+                >
+                  ↓
+                </button>
+              </span>
+              <span class="connection-state" :class="conn.status"></span>
+              <button
+                type="button"
+                class="round-action favorite"
+                :class="{ active: conn.favorite }"
+                v-tooltip="conn.favorite ? $t('list.removeFavorite') : $t('list.addFavorite')"
+                @click.stop="toggleFavorite(conn)"
+              >
+                <Icon icon="star"/>
+              </button>
+              <button
+                type="button"
+                class="round-action open-folder"
+                :disabled="conn.status !== 'connected'"
+                v-tooltip="$t('common.openFolder')"
+                @click.stop="openLocal(getLocalMountPath(conn))"
+              >
+                <Icon icon="openFolder"/>
+              </button>
+              <button
+                type="button"
+                class="round-action open-terminal"
+                :disabled="conn.status !== 'connected'"
+                v-tooltip="$t('common.openTerminal')"
+                @click.stop="openTerminal(conn)"
+              >
+                <span>&gt;_</span>
+              </button>
+              <button
+                v-if="conn.status === 'connected'"
+                type="button"
+                class="round-action primary"
+                v-tooltip="$t('common.disconnect')"
+                @click.stop="disconnect(conn)"
+              >
+                <Icon icon="plugConnected"/>
+              </button>
+              <button
+                v-else
+                type="button"
+                class="round-action"
+                :class="{ loading: conn.status === 'connecting' }"
+                :disabled="conn.status === 'connecting' || conn.status === 'disconnecting'"
+                v-tooltip="conn.status === 'connecting' ? $t('common.connecting') : $t('common.connect')"
+                @click.stop="connect(conn)"
+              >
+                <Icon icon="plugDisconnected"/>
+              </button>
+            </span>
           </button>
+
+          <div v-if="expandedConnectionUuid === conn.uuid" class="connection-expanded">
+            <div class="info-panel">
+              <div class="info-row">
+                <span>{{ $t('detail.address') }}</span>
+                <strong>{{ conn.host }}</strong>
+              </div>
+              <div class="info-row">
+                <span>{{ $t('detail.port') }}</span>
+                <strong>{{ conn.port || 22 }}</strong>
+              </div>
+              <div class="info-row">
+                <span>{{ $t('detail.mountPoint') }}</span>
+                <strong>{{ mountPointLabel(conn) }}</strong>
+              </div>
+              <div class="info-row">
+                <span>{{ $t('detail.remotePath') }}</span>
+                <strong>{{ conn.folder || '/' }}</strong>
+              </div>
+              <div class="info-row">
+                <span>{{ $t('detail.user') }}</span>
+                <strong>{{ conn.user || '-' }}</strong>
+              </div>
+              <div class="info-row ssh-command-row">
+                <span>{{ $t('detail.sshCommand') }}</span>
+                <strong>
+                  <button type="button" v-tooltip="$t('detail.copySshCommand')" @click="copySshCommand(conn)">
+                    <Icon icon="duplicate"/>
+                  </button>
+                </strong>
+              </div>
+            </div>
+
+            <div class="expanded-actions">
+              <button class="action-button" type="button" @click="editConnection(conn)">
+                <Icon icon="pen"/>
+                {{ $t('common.edit') }}
+              </button>
+              <button class="action-button" type="button" @click="cloneConnection(conn)">
+                <Icon icon="duplicate"/>
+                {{ $t('common.duplicate') }}
+              </button>
+              <button class="action-button" type="button" @click="selectConnectionIcon(conn)">
+                <Icon icon="pen"/>
+                {{ $t('detail.changeIcon') }}
+              </button>
+              <button v-if="conn.iconDataUrl" class="action-button" type="button" @click="removeConnectionIcon(conn)">
+                <Icon icon="unavailable"/>
+                {{ $t('detail.removeIcon') }}
+              </button>
+              <button class="action-button danger" type="button" @click="deleteConnection(conn)">
+                <Icon icon="trashCan"/>
+                {{ $t('common.delete') }}
+              </button>
+            </div>
+          </div>
+          </template>
+
+          <div class="list-footer">
+            <button class="btn primary-action" type="button" @click="addNewConnection">
+              <Icon icon="plus"/>
+              {{ $t('detail.newConnection') }}
+            </button>
+          </div>
         </div>
       </section>
 
-      <section class="detail-panel" :class="{ collapsed: isDetailPanelCollapsed, 'can-collapse': canCollapseDetailPanel }">
-        <button
-          class="detail-collapse-handle"
-          type="button"
-          :title="isDetailPanelCollapsed ? $t('detail.expandPanel') : $t('detail.collapsePanel')"
-          @click="toggleDetailPanel"
-        >
-          {{ isDetailPanelCollapsed ? '›' : '‹' }}
-        </button>
+      <section v-else-if="activeSection === 'settings'" class="settings-tab">
+        <div class="settings-scroll">
+          <div class="workspace-card settings-workspace">
+            <header class="workspace-header">
+              <div>
+                <h1>{{ $t('settings.title') }}</h1>
+                <p>{{ $t('settings.subtitle') }}</p>
+              </div>
+            </header>
 
-        <div class="detail-topbar">
-          <button class="btn primary-action" type="button" @click="addNewConnection">
-            <Icon icon="plus"/>
-            {{ $t('detail.newConnection') }}
-          </button>
-        </div>
+            <div class="settings-section">
+              <h2>{{ $t('settings.sectionGeneral') }}</h2>
+              <div class="settings-grid">
+                <label class="field">
+                  <span>{{ $t('settings.sshfsBinary') }}</span>
+                  <input v-model="settingsForm.sshfsBinary" type="text" :placeholder="sshfsBinaryPlaceholder">
+                </label>
 
-        <div v-if="activeSection === 'settings'" class="workspace-card settings-workspace">
-          <header class="workspace-header">
-            <div>
-              <h1>{{ $t('settings.title') }}</h1>
-              <p>{{ $t('settings.subtitle') }}</p>
-            </div>
-          </header>
+                <label class="field compact">
+                  <span>{{ $t('settings.processTimeout') }}</span>
+                  <input v-model.number="settingsForm.processTrackTimeout" type="number" min="1">
+                </label>
 
-          <div class="settings-grid">
-            <label class="field">
-              <span>{{ $t('settings.sshfsBinary') }}</span>
-              <input v-model="settingsForm.sshfsBinary" type="text" :placeholder="sshfsBinaryPlaceholder">
-            </label>
+                <label class="field">
+                  <span>{{ $t('settings.theme') }}</span>
+                  <select v-model="settingsForm.theme" @change="previewTheme(settingsForm.theme)">
+                    <optgroup v-for="group in themeGroups" :key="group.label" :label="group.label">
+                      <option v-for="theme in group.themes" :key="theme.value" :value="theme.value">{{ theme.label }}</option>
+                    </optgroup>
+                  </select>
+                </label>
 
-            <label class="field compact">
-              <span>{{ $t('settings.processTimeout') }}</span>
-              <input v-model.number="settingsForm.processTrackTimeout" type="number" min="1">
-            </label>
+                <label class="field compact">
+                  <span>{{ $t('settings.language') }}</span>
+                  <select v-model="settingsForm.language" @change="previewLanguage(settingsForm.language)">
+                    <option v-for="locale in localeOptions" :key="locale.value" :value="locale.value">{{ $t(locale.labelKey) }}</option>
+                  </select>
+                </label>
+              </div>
 
-            <label class="field">
-              <span>{{ $t('settings.theme') }}</span>
-              <select v-model="settingsForm.theme" @change="previewTheme(settingsForm.theme)">
-                <optgroup v-for="group in themeGroups" :key="group.label" :label="group.label">
-                  <option v-for="theme in group.themes" :key="theme.value" :value="theme.value">{{ theme.label }}</option>
-                </optgroup>
-              </select>
-            </label>
-
-            <label class="field compact">
-              <span>{{ $t('settings.language') }}</span>
-              <select v-model="settingsForm.language" @change="previewLanguage(settingsForm.language)">
-                <option v-for="locale in localeOptions" :key="locale.value" :value="locale.value">{{ $t(locale.labelKey) }}</option>
-              </select>
-            </label>
-
-            <label class="field compact">
-              <span>{{ $t('settings.passkeyRetention') }}</span>
-              <select v-model="settingsForm.passkeyRetention">
-                <option value="always">{{ $t('settings.passkeyAlways') }}</option>
-                <option value="1h">{{ $t('settings.passkey1h') }}</option>
-                <option value="12h">{{ $t('settings.passkey12h') }}</option>
-                <option value="1d">{{ $t('settings.passkey1d') }}</option>
-                <option value="2d">{{ $t('settings.passkey2d') }}</option>
-              </select>
-            </label>
-
-            <div class="toggle-list">
-              <label class="settings-toggle">
-                <input v-model="settingsForm.startupWithOS" type="checkbox">
-                <span class="switch-track"></span>
-                <span class="toggle-text">{{ $t('settings.startupWithOS') }}</span>
-              </label>
-              <label class="settings-toggle">
-                <input v-model="settingsForm.displayTrayMessageOnClose" type="checkbox">
-                <span class="switch-track"></span>
-                <span class="toggle-text">{{ $t('settings.displayTrayMessageOnClose') }}</span>
-              </label>
-              <label class="settings-toggle">
-                <input v-model="settingsForm.showDebugPanel" type="checkbox">
-                <span class="switch-track"></span>
-                <span class="toggle-text">{{ $t('settings.showDebugPanel') }}</span>
-              </label>
-              <label class="settings-toggle">
-                <input v-model="settingsForm.compactMode" type="checkbox">
-                <span class="switch-track"></span>
-                <span class="toggle-text">{{ $t('settings.compactMode') }}</span>
-              </label>
-              <label class="settings-toggle">
-                <input v-model="settingsForm.demoMode" type="checkbox">
-                <span class="switch-track"></span>
-                <span class="toggle-text">{{ $t('settings.demoMode') }}</span>
-              </label>
+              <div class="toggle-list">
+                <label class="settings-toggle">
+                  <input v-model="settingsForm.startupWithOS" type="checkbox">
+                  <span class="switch-track"></span>
+                  <span class="toggle-text">{{ $t('settings.startupWithOS') }}</span>
+                </label>
+                <label class="settings-toggle">
+                  <input v-model="settingsForm.displayTrayMessageOnClose" type="checkbox">
+                  <span class="switch-track"></span>
+                  <span class="toggle-text">{{ $t('settings.displayTrayMessageOnClose') }}</span>
+                </label>
+                <label class="settings-toggle">
+                  <input v-model="settingsForm.showDebugPanel" type="checkbox">
+                  <span class="switch-track"></span>
+                  <span class="toggle-text">{{ $t('settings.showDebugPanel') }}</span>
+                </label>
+                <label class="settings-toggle">
+                  <input v-model="settingsForm.compactMode" type="checkbox">
+                  <span class="switch-track"></span>
+                  <span class="toggle-text">{{ $t('settings.compactMode') }}</span>
+                </label>
+              </div>
             </div>
 
-            <div class="settings-actions">
-              <button class="action-button" type="button" @click="exportConnections">
-                <Icon icon="duplicate"/>
-                {{ $t('settings.exportJson') }}
-              </button>
-              <button class="action-button" type="button" @click="importConnections">
-                <Icon icon="openFolder"/>
-                {{ $t('settings.importJson') }}
-              </button>
-              <button class="action-button" type="button" @click="importLegacyConfiguration">
-                <Icon icon="duplicate"/>
-                {{ $t('settings.importLegacy') }}
-              </button>
+            <div class="settings-section">
+              <h2>{{ $t('settings.sectionPasskey') }}</h2>
+              <div class="toggle-list">
+                <label class="settings-toggle">
+                  <input v-model="settingsForm.passkeyEnabled" type="checkbox">
+                  <span class="switch-track"></span>
+                  <span class="toggle-text">{{ $t('settings.passkeyEnabled') }}</span>
+                </label>
+              </div>
+
+              <div class="settings-grid passkey-grid" :class="{ 'is-disabled': !settingsForm.passkeyEnabled }">
+                <label class="field compact">
+                  <span>{{ $t('settings.passkeyRetention') }}</span>
+                  <select v-model="settingsForm.passkeyRetention" :disabled="!settingsForm.passkeyEnabled">
+                    <option value="always">{{ $t('settings.passkeyAlways') }}</option>
+                    <option value="1h">{{ $t('settings.passkey1h') }}</option>
+                    <option value="12h">{{ $t('settings.passkey12h') }}</option>
+                    <option value="1d">{{ $t('settings.passkey1d') }}</option>
+                    <option value="2d">{{ $t('settings.passkey2d') }}</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
-            <div class="settings-form-actions">
-              <button class="btn" type="button" @click="resetSettingsForm">{{ $t('common.cancel') }}</button>
-              <button class="btn primary-action" type="button" @click="saveSettings">{{ $t('common.save') }}</button>
+            <div class="settings-section">
+              <h2>{{ $t('settings.sectionData') }}</h2>
+              <div class="settings-actions">
+                <button class="action-button" type="button" @click="exportConnections">
+                  <Icon icon="duplicate"/>
+                  {{ $t('settings.exportJson') }}
+                </button>
+                <button class="action-button" type="button" @click="importConnections">
+                  <Icon icon="openFolder"/>
+                  {{ $t('settings.importJson') }}
+                </button>
+                <button class="action-button" type="button" @click="importLegacyConfiguration">
+                  <Icon icon="duplicate"/>
+                  {{ $t('settings.importLegacy') }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <div v-else-if="activeSection === 'about'" class="workspace-card about-workspace">
+        <div class="settings-form-actions">
+          <button class="btn cancel-action" type="button" @click="resetSettingsForm">{{ $t('common.cancel') }}</button>
+          <button class="btn save-action" type="button" @click="saveSettings">{{ $t('common.save') }}</button>
+        </div>
+      </section>
+
+      <section v-else-if="activeSection === 'about'" class="tab-workspace">
+        <div class="workspace-card about-workspace">
           <header class="workspace-header">
             <div>
-              <h1>SSHFS-Win Manager Evo</h1>
+              <h1>SSHFS-Win Manager Sky</h1>
               <p>{{ $t('about.versionLine', { version: appVersion }) }}</p>
             </div>
           </header>
 
           <div class="about-content">
             <p>{{ $t('about.maintainedBy') }}</p>
-            <p>{{ $t('about.website') }} <button class="text-link" type="button" @click="openExternal('https://emulsion.io')">emulsion.io</button></p>
+            <p>{{ $t('about.website') }} <button class="text-link" type="button" @click="openExternal('https://4-sky.de')">4-sky.de</button></p>
             <p>{{ $t('about.basedOn') }}</p>
             <p>{{ $t('about.license') }}</p>
 
@@ -307,169 +402,12 @@
               <button type="button" @click="openExternal('https://github.com/billziss-gh/sshfs-win')">SSHFS-Win</button>
             </div>
           </div>
+
         </div>
+      </section>
 
-        <div v-else-if="selectedConnection" class="detail-card">
-          <header class="detail-header">
-            <span class="detail-icon-wrap">
-              <button class="detail-icon" type="button" v-tooltip="$t('detail.changeIcon')" @click="selectConnectionIcon(selectedConnection)">
-                <img v-if="selectedConnection.iconDataUrl" :src="selectedConnection.iconDataUrl" :alt="selectedConnection.name">
-                <Icon v-else icon="sshfsFolder"/>
-              </button>
-              <button
-                v-if="selectedConnection.iconDataUrl"
-                class="detail-icon-remove"
-                type="button"
-                v-tooltip="$t('detail.removeIcon')"
-                @click="removeConnectionIcon(selectedConnection)"
-              >
-                ×
-              </button>
-            </span>
-
-            <div class="detail-title">
-              <div class="detail-title-main">
-                <h1>{{ selectedConnection.name }}</h1>
-                <span class="status-pill" :class="selectedConnection.status">
-                  <span class="status-dot"></span>
-                  {{ statusLabel(selectedConnection) }}
-                </span>
-              </div>
-              <div class="detail-title-meta">
-                <p>
-                  <b>{{ mountPointLabel(selectedConnection) }}</b>
-                  {{ selectedConnection.host }}
-                  <i>&middot;</i>
-                  {{ selectedConnection.folder || '/' }}
-                </p>
-
-                <div class="detail-title-actions">
-                  <button type="button" class="icon-button" v-tooltip="$t('common.edit')" @click="editConnection(selectedConnection)">
-                    <Icon icon="pen"/>
-                  </button>
-                  <button
-                    type="button"
-                    class="icon-button favorite"
-                    :class="{ active: selectedConnection.favorite }"
-                    v-tooltip="selectedConnection.favorite ? $t('list.removeFavorite') : $t('list.addFavorite')"
-                    @click="toggleFavorite(selectedConnection)"
-                  >
-                    <Icon icon="star"/>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </header>
-
-          <div class="detail-body">
-            <div class="info-panel">
-              <div class="info-row">
-                <span>{{ $t('detail.status') }}</span>
-                <strong>{{ statusLabel(selectedConnection) }}</strong>
-              </div>
-              <div class="info-row">
-                <span>{{ $t('detail.connectionType') }}</span>
-                <strong>SSHFS</strong>
-              </div>
-              <div class="info-row">
-                <span>{{ $t('detail.address') }}</span>
-                <strong>{{ selectedConnection.host }}</strong>
-              </div>
-              <div class="info-row">
-                <span>{{ $t('detail.port') }}</span>
-                <strong>{{ selectedConnection.port || 22 }}</strong>
-              </div>
-              <div class="info-row">
-                <span>{{ $t('detail.mountPoint') }}</span>
-                <strong>{{ mountPointLabel(selectedConnection) }}</strong>
-              </div>
-              <div class="info-row">
-                <span>{{ $t('detail.remotePath') }}</span>
-                <strong>{{ selectedConnection.folder || '/' }}</strong>
-              </div>
-              <div class="info-row">
-                <span>{{ $t('detail.user') }}</span>
-                <strong>{{ selectedConnection.user || '-' }}</strong>
-              </div>
-              <div class="info-row ssh-command-row">
-                <span>{{ $t('detail.sshCommand') }}</span>
-                <strong>
-                  <button type="button" v-tooltip="$t('detail.copySshCommand')" @click="copySshCommand(selectedConnection)">
-                    <Icon icon="duplicate"/>
-                  </button>
-                </strong>
-              </div>
-            </div>
-
-            <aside class="actions-panel">
-              <h2>{{ $t('detail.actions') }}</h2>
-              <button
-                v-if="selectedConnection.status === 'connected'"
-                class="action-button primary"
-                type="button"
-                @click="disconnect(selectedConnection)"
-              >
-                <Icon icon="plugConnected"/>
-                {{ $t('common.disconnect') }}
-              </button>
-              <button
-                v-else
-                class="action-button primary"
-                :class="{ loading: selectedConnection.status === 'connecting' }"
-                :disabled="selectedConnection.status === 'connecting' || selectedConnection.status === 'disconnecting'"
-                type="button"
-                @click="connect(selectedConnection)"
-              >
-                <Icon icon="plugDisconnected"/>
-                {{ selectedConnection.status === 'connecting' ? $t('common.connecting') : $t('common.connect') }}
-              </button>
-              <button class="action-button" type="button" @click="editConnection(selectedConnection)">
-                <Icon icon="pen"/>
-                {{ $t('common.edit') }}
-              </button>
-              <button class="action-button" type="button" @click="cloneConnection(selectedConnection)">
-                <Icon icon="duplicate"/>
-                {{ $t('common.duplicate') }}
-              </button>
-              <button
-                class="action-button"
-                type="button"
-                :disabled="selectedConnection.status !== 'connected'"
-                @click="openLocal(getLocalMountPath(selectedConnection))"
-              >
-                <Icon icon="openFolder"/>
-                {{ $t('common.openFolder') }}
-              </button>
-              <button
-                class="action-button"
-                type="button"
-                :disabled="selectedConnection.status !== 'connected'"
-                @click="openTerminal(selectedConnection)"
-              >
-                <span class="terminal-glyph">&gt;_</span>
-                {{ $t('common.openTerminal') }}
-              </button>
-              <button class="action-button danger" type="button" @click="deleteConnection(selectedConnection)">
-                <Icon icon="trashCan"/>
-                {{ $t('common.delete') }}
-              </button>
-            </aside>
-          </div>
-        </div>
-
-        <div v-else class="empty-detail">
-          <Icon icon="sshfsFolder"/>
-          <h1>{{ $t('detail.selectTitle') }}</h1>
-          <p>{{ $t('detail.selectText') }}</p>
-        </div>
-
-        <div class="stats-bar">
-          <span><Icon icon="sshfsFolder"/> {{ $t('detail.connectionsCount', { count: connections.length }) }}</span>
-          <span class="success"><span class="status-dot"></span> {{ $t('detail.connectedCount', { count: connectedConnections.length }) }}</span>
-          <span class="warning"><span class="status-dot"></span> {{ $t('detail.busyCount', { count: busyConnections.length }) }}</span>
-        </div>
-
-        <div v-show="appSettings.showDebugPanel" class="debug-panel">
+      <section v-else-if="activeSection === 'debug'" class="tab-workspace debug-workspace">
+        <div class="debug-panel">
           <div class="debug-header">
             <strong>{{ $t('detail.debugOutput') }}</strong>
             <span>
@@ -484,12 +422,34 @@
           <textarea v-model="debugOutput" readonly ref="debugOutput"></textarea>
         </div>
       </section>
+      </main>
+
+      <footer class="status-bar">
+        <div class="status-left">
+          <span><Icon icon="sshfsFolder"/> {{ $t('detail.connectionsCount', { count: connections.length }) }}</span>
+          <span class="success"><span class="status-dot"></span> {{ $t('detail.connectedCount', { count: connectedConnections.length }) }}</span>
+          <span class="warning"><span class="status-dot"></span> {{ $t('detail.busyCount', { count: busyConnections.length }) }}</span>
+        </div>
+        <div class="status-right">
+          <span class="success"><span class="status-dot"></span> {{ $t('app.serviceActive') }}</span>
+        </div>
+      </footer>
     </div>
 
     <div v-if="notificationToast" class="app-toast" :class="notificationToast.type">
       {{ notificationToast.text }}
     </div>
-  </Window>
+
+    <div v-if="passkeyConfirmVisible" class="modal-backdrop" @click.self="resolvePasskeyConfirm(false)">
+      <div class="modal-card">
+        <h2>{{ $t('settings.passkeyDisableTitle') }}</h2>
+        <p>{{ $t('settings.passkeyDisableConfirm') }}</p>
+        <div class="modal-actions">
+          <button class="btn" type="button" @click="resolvePasskeyConfirm(false)">{{ $t('common.cancel') }}</button>
+          <button class="btn primary-action" type="button" @click="resolvePasskeyConfirm(true)">{{ $t('common.ok') }}</button>
+        </div>
+      </div>
+    </div>
 </template>
 
 <script>
@@ -505,8 +465,8 @@ import { supportedLocaleOptions } from '@/i18n/locales.js'
 import { defaultSettings, normalizeSettings } from '@/store/SettingsDefaults.js'
 import { currentPlatform, getConnectionMountPoint } from '@/platform/index.js'
 
-import Window from '@/components/Window/index.vue'
 import Icon from '@/components/Icon.vue'
+import AddEditConnectionWindow from '@/components/AddEditConnectionWindow/index.vue'
 
 function createDemoConnections () {
   const names = [
@@ -555,13 +515,94 @@ export default {
   name: 'main-window',
 
   components: {
-    Window,
-    Icon
+    Icon,
+    AddEditConnectionWindow
   },
 
   methods: {
     showConnections () {
       this.activeSection = 'connections'
+    },
+
+    showDebug () {
+      this.activeSection = 'debug'
+    },
+
+    windowMinimize () {
+      ipcRenderer.send('window:minimize-current')
+    },
+
+    setupWindowDrag () {
+      let drag = null
+      let dragMoved = false
+
+      window.addEventListener('mousedown', e => {
+        if (e.button !== 0) {
+          return
+        }
+
+        if (e.target.closest('input, select, textarea, .modal-card, [draggable="true"]')) {
+          return
+        }
+
+        let el = e.target
+        while (el && el !== document.documentElement) {
+          if (el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth) {
+            const rect = el.getBoundingClientRect()
+            if (e.clientX > rect.left + el.clientWidth || e.clientY > rect.top + el.clientHeight) {
+              return
+            }
+          }
+          el = el.parentElement
+        }
+
+        drag = { sx: e.screenX, sy: e.screenY, pos: null, active: false }
+        dragMoved = false
+
+        ipcRenderer.invoke('window:get-position').then(pos => {
+          if (drag) {
+            drag.pos = pos
+          }
+        })
+      })
+
+      window.addEventListener('mousemove', e => {
+        if (!drag || !drag.pos) {
+          return
+        }
+
+        const dx = e.screenX - drag.sx
+        const dy = e.screenY - drag.sy
+
+        if (!drag.active && Math.abs(dx) + Math.abs(dy) < 5) {
+          return
+        }
+
+        drag.active = true
+        dragMoved = true
+
+        ipcRenderer.send('window:set-position', {
+          x: drag.pos[0] + dx,
+          y: drag.pos[1] + dy
+        })
+      })
+
+      window.addEventListener('mouseup', () => {
+        drag = null
+      })
+
+      window.addEventListener('click', e => {
+        if (dragMoved) {
+          dragMoved = false
+          e.stopPropagation()
+          e.preventDefault()
+        }
+      }, true)
+    },
+
+    windowClose () {
+      ipcRenderer.send('window:hide-current')
+      this.showRunningInBackgroundNotification()
     },
 
     showFavorites () {
@@ -570,77 +611,11 @@ export default {
 
     showSettings () {
       this.activeSection = 'settings'
-      if (this.detailPanelCollapsed) {
-        this.detailPanelCollapsed = false
-        this.resizeForDetailPanel(false)
-      }
       this.settingsForm = normalizeSettings(this.appSettings)
     },
 
     showAbout () {
       this.activeSection = 'about'
-      if (this.detailPanelCollapsed) {
-        this.detailPanelCollapsed = false
-        this.resizeForDetailPanel(false)
-      }
-    },
-
-    toggleDetailPanel () {
-      const nextCollapsed = !this.detailPanelCollapsed
-      const layout = this.getMeasuredLayout()
-
-      if (nextCollapsed) {
-        this.detailPanelResizeDelta = Math.max(0, Math.round(layout.detailWidth - layout.collapsedDetailWidth))
-      }
-
-      this.detailPanelCollapsed = nextCollapsed
-      this.resizeForDetailPanel(nextCollapsed, this.detailPanelResizeDelta, this.getDetailPanelTargetWidth(nextCollapsed, layout))
-    },
-
-    resizeForDetailPanel (collapsed, delta = this.detailPanelResizeDelta, width = 0) {
-      ipcRenderer.send('main-window:set-detail-collapsed', {
-        collapsed,
-        delta,
-        width,
-        minWidth: collapsed ? Math.max(540, width) : 1100
-      })
-    },
-
-    getMeasuredLayout () {
-      const shell = this.$el
-      const shellStyle = window.getComputedStyle(shell)
-      const nav = shell.querySelector('.nav-rail')
-      const list = shell.querySelector('.connection-panel')
-      const detail = shell.querySelector('.detail-panel')
-      const shellPaddingLeft = parseFloat(shellStyle.paddingLeft) || 0
-      const shellPaddingRight = parseFloat(shellStyle.paddingRight) || 0
-      const gridGap = parseFloat(shellStyle.columnGap || shellStyle.gap) || 0
-      const navWidth = nav ? nav.getBoundingClientRect().width : 0
-      const listWidth = list ? list.getBoundingClientRect().width : 0
-      const detailWidth = detail ? detail.getBoundingClientRect().width : 0
-
-      return {
-        shellPadding: shellPaddingLeft + shellPaddingRight,
-        gridGap,
-        navWidth,
-        listWidth,
-        detailWidth,
-        collapsedDetailWidth: 10
-      }
-    },
-
-    getDetailPanelTargetWidth (collapsed, measuredLayout = this.getMeasuredLayout()) {
-      if (!collapsed) {
-        return 0
-      }
-
-      return Math.round(
-        measuredLayout.shellPadding +
-        (measuredLayout.gridGap * 2) +
-        measuredLayout.navWidth +
-        measuredLayout.listWidth +
-        measuredLayout.collapsedDetailWidth
-      )
     },
 
     handleSortModeChange () {
@@ -691,14 +666,43 @@ export default {
       this.settingsForm = normalizeSettings(this.appSettings)
       this.previewTheme(this.settingsForm.theme)
       this.previewLanguage(this.settingsForm.language)
+      this.activeSection = 'connections'
     },
 
     previewLanguage (language) {
       setLocale(language)
     },
 
-    saveSettings () {
+    async saveSettings () {
       const settings = normalizeSettings(this.settingsForm)
+      const passkeyWasEnabled = this.appSettings.passkeyEnabled !== false
+
+      if (passkeyWasEnabled && !settings.passkeyEnabled) {
+        if (!(await this.confirmPasskeyDisable())) {
+          this.settingsForm.passkeyEnabled = true
+          return
+        }
+
+        if (!(await this.decryptAllSecretsToPlainText())) {
+          this.settingsForm.passkeyEnabled = true
+          return
+        }
+      }
+
+      if (!passkeyWasEnabled && settings.passkeyEnabled) {
+        if (!(await this.encryptAllPlainTextPasswords())) {
+          this.settingsForm.passkeyEnabled = false
+          return
+        }
+      }
+
+      if (!settings.showDebugPanel && this.activeSection === 'debug') {
+        this.activeSection = 'settings'
+      }
+
+      if (settings.compactMode !== (this.appSettings.compactMode === true)) {
+        ipcRenderer.send('main-window:set-size', { width: settings.compactMode ? 440 : 680 })
+      }
 
       this.settingsForm = { ...settings }
       this.$store.dispatch('UPDATE_SETTINGS', settings)
@@ -914,6 +918,11 @@ export default {
       }
     },
 
+    toggleExpandConnection (conn) {
+      this.selectConnection(conn)
+      this.expandedConnectionUuid = this.expandedConnectionUuid === conn.uuid ? null : conn.uuid
+    },
+
     toggleDeleteMode () {
       this.listMode = this.listMode === 'delete' ? 'none' : 'delete'
     },
@@ -946,6 +955,15 @@ export default {
 
         if (!password) {
           return null
+        }
+
+        if (this.appSettings.passkeyEnabled === false) {
+          this.$store.dispatch('UPDATE_CONNECTION', {
+            ...conn,
+            password
+          })
+
+          return { ...conn, password }
         }
 
         const activePasskey = await SecretManager.getPasskey(this.appSettings, this.getFirstEncryptedPassword() ? 'unlock' : 'create')
@@ -1045,6 +1063,101 @@ export default {
       const conn = this.$store.state.Data.connections.find(conn => conn.secrets && conn.secrets.password)
 
       return conn && conn.secrets.password
+    },
+
+    confirmPasskeyDisable () {
+      return new Promise(resolve => {
+        this.passkeyConfirmResolve = resolve
+        this.passkeyConfirmVisible = true
+      })
+    },
+
+    resolvePasskeyConfirm (accepted) {
+      this.passkeyConfirmVisible = false
+
+      if (this.passkeyConfirmResolve) {
+        this.passkeyConfirmResolve(accepted)
+        this.passkeyConfirmResolve = null
+      }
+    },
+
+    async decryptAllSecretsToPlainText () {
+      const encryptedConnections = this.$store.state.Data.connections.filter(conn => conn.secrets && conn.secrets.password)
+
+      if (!encryptedConnections.length) {
+        SecretManager.lock()
+        return true
+      }
+
+      SecretManager.lock()
+
+      const activePasskey = await SecretManager.getPasskey(this.appSettings, 'unlock')
+
+      if (!activePasskey) {
+        return false
+      }
+
+      const decrypted = []
+
+      try {
+        for (const conn of encryptedConnections) {
+          decrypted.push([conn, SecretManager.decryptWithPasskey(conn.secrets.password, activePasskey)])
+        }
+      } catch {
+        SecretManager.lock()
+        this.notify(this.$t('notifications.passkeyInvalid'), 'error-icon')
+        return false
+      }
+
+      for (const [conn, password] of decrypted) {
+        const secrets = { ...(conn.secrets || {}) }
+        delete secrets.password
+
+        this.$store.dispatch('UPDATE_CONNECTION', {
+          ...conn,
+          password,
+          secrets
+        })
+      }
+
+      SecretManager.lock()
+      return true
+    },
+
+    async encryptAllPlainTextPasswords () {
+      const plainPasswordConnections = this.$store.state.Data.connections.filter(conn => conn.authType === 'password' && conn.password)
+      const existingEncryptedSecret = this.getFirstEncryptedPassword()
+
+      SecretManager.lock()
+
+      const activePasskey = await SecretManager.getPasskey(this.appSettings, existingEncryptedSecret ? 'unlock' : 'create')
+
+      if (!activePasskey) {
+        return false
+      }
+
+      if (existingEncryptedSecret) {
+        try {
+          SecretManager.decryptWithPasskey(existingEncryptedSecret, activePasskey)
+        } catch {
+          SecretManager.lock()
+          this.notify(this.$t('notifications.passkeyInvalid'), 'error-icon')
+          return false
+        }
+      }
+
+      for (const conn of plainPasswordConnections) {
+        this.$store.dispatch('UPDATE_CONNECTION', {
+          ...conn,
+          password: '',
+          secrets: {
+            ...(conn.secrets || {}),
+            password: SecretManager.encryptWithPasskey(conn.password, activePasskey)
+          }
+        })
+      }
+
+      return true
     },
 
     async unlockEncryptedSecretsAtStartup () {
@@ -1227,20 +1340,8 @@ export default {
     },
 
     addNewConnection () {
-      ipcRenderer.invoke('window:open', {
-        name: 'add-new-connection-window',
-        route: '#/add-new-connection',
-        options: {
-          height: 770,
-          width: 500,
-          useContentSize: true,
-          frame: false,
-          maximizable: false,
-          minimizable: false,
-          resizable: false,
-          modal: true
-        }
-      })
+      this.connectionFormUuid = null
+      this.connectionFormVisible = true
     },
 
     editConnection (conn) {
@@ -1248,20 +1349,8 @@ export default {
         return
       }
 
-      ipcRenderer.invoke('window:open', {
-        name: 'edit-connection-window',
-        route: `#/edit-connection/${conn.uuid}`,
-        options: {
-          height: 770,
-          width: 500,
-          useContentSize: true,
-          frame: false,
-          maximizable: false,
-          minimizable: false,
-          resizable: false,
-          modal: true
-        }
-      })
+      this.connectionFormUuid = conn.uuid
+      this.connectionFormVisible = true
     },
 
     cloneConnection (conn) {
@@ -1531,14 +1620,6 @@ export default {
       return this.connections.filter(conn => conn.status === 'connecting' || conn.status === 'disconnecting')
     },
 
-    canCollapseDetailPanel () {
-      return true
-    },
-
-    isDetailPanelCollapsed () {
-      return this.detailPanelCollapsed
-    },
-
     appSettings () {
       return this.$store.state.Settings.settings
     },
@@ -1561,24 +1642,15 @@ export default {
         }
       },
       immediate: true
-    },
-
-    'appSettings.compactMode' () {
-      if (this.detailPanelCollapsed) {
-        this.$nextTick(() => {
-          this.resizeForDetailPanel(true, 0, this.getDetailPanelTargetWidth(true))
-        })
-      }
     }
   },
 
   data () {
     return {
       activeSection: 'connections',
-      detailPanelCollapsed: false,
-      detailPanelResizeDelta: 0,
+      expandedConnectionUuid: null,
       listMode: 'none',
-      sortMode: 'name',
+      sortMode: 'manual',
       searchText: '',
       settingsForm: { ...defaultSettings },
       demoConnections: createDemoConnections(),
@@ -1624,6 +1696,10 @@ export default {
       runningInBackgroundNotificationShowed: false,
       notificationToast: null,
       notificationTimer: null,
+      passkeyConfirmVisible: false,
+      passkeyConfirmResolve: null,
+      connectionFormVisible: false,
+      connectionFormUuid: null,
       debugOutput: '',
       appVersion: ''
     }
@@ -1631,9 +1707,18 @@ export default {
 
   mounted () {
     this.settingsForm = normalizeSettings(this.appSettings)
+
+    this.setupWindowDrag()
+
+    if (this.appSettings.compactMode) {
+      ipcRenderer.send('main-window:set-size', { width: 440 })
+    }
+
     setTimeout(async () => {
-      await this.migratePlainTextPasswords()
-      await this.unlockEncryptedSecretsAtStartup()
+      if (this.appSettings.passkeyEnabled !== false) {
+        await this.migratePlainTextPasswords()
+        await this.unlockEncryptedSecretsAtStartup()
+      }
     }, 600)
 
     ipcRenderer.invoke('app:get-version').then(version => {
@@ -1643,13 +1728,6 @@ export default {
     ipcRenderer.on('main-window:show-section', (event, section) => {
       if (['connections', 'favorites', 'settings', 'about'].includes(section)) {
         this.activeSection = section
-
-        if (section === 'settings' || section === 'about') {
-          if (this.detailPanelCollapsed) {
-            this.detailPanelCollapsed = false
-            this.resizeForDetailPanel(false)
-          }
-        }
       }
     })
 
@@ -1740,17 +1818,380 @@ export default {
 
 <style lang="less" scoped>
 .main-shell {
-  height: 100%;
-  padding: 18px;
+  height: 100vh;
   display: grid;
-  grid-template-columns: 72px minmax(540px, 600px) minmax(420px, 1fr);
-  gap: 18px;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 1fr;
   overflow: hidden;
   color: var(--app-text);
   font-size: 12px;
   background:
     radial-gradient(circle at 28% 0%, rgba(42, 119, 255, 0.2), transparent 34%),
     linear-gradient(135deg, var(--app-bg), var(--app-surface));
+}
+
+.tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 0 2px 10px;
+  border-bottom: 1px solid var(--app-border);
+  background: color-mix(in srgb, var(--app-surface) 86%, transparent);
+  -webkit-app-region: drag;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 12px;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.brand-text strong {
+  font-weight: 700;
+  color: var(--app-text);
+}
+
+.brand-text span {
+  font-weight: 300;
+  color: var(--app-muted);
+}
+
+.brand-text em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--app-primary);
+}
+
+.tab-bar button {
+  -webkit-app-region: no-drag;
+}
+
+.tab-spacer {
+  flex: 1;
+}
+
+.window-controls {
+  align-self: stretch;
+  display: flex;
+  margin-left: 8px;
+}
+
+.window-control {
+  width: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--app-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.window-control svg {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+}
+
+.window-control:hover {
+  color: var(--app-text);
+  background: color-mix(in srgb, var(--app-text) 10%, transparent);
+}
+
+.window-control.close:hover {
+  color: #fff;
+  background: #d41324;
+}
+
+.chevron {
+  display: inline-block;
+  transition: transform 0.15s ease;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+.tab-bar .brand-mark {
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  border-radius: 8px;
+}
+
+.tab-bar .brand-mark svg {
+  width: 18px;
+  height: 18px;
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--app-muted);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.tab-item svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+}
+
+.tab-item:hover,
+.tab-item.active {
+  color: var(--app-primary);
+  background: color-mix(in srgb, var(--app-primary) 12%, transparent);
+}
+
+.tab-content {
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.tab-content > section {
+  flex: 1;
+  min-width: 0;
+}
+
+.tab-workspace {
+  overflow-y: auto;
+  padding: 14px;
+}
+
+.tab-workspace .workspace-card {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.list-footer {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.list-footer .btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.status-bar {
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px 3px;
+  border-top: 1px solid var(--app-border);
+  background: color-mix(in srgb, var(--app-surface) 86%, transparent);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--app-muted);
+}
+
+.status-bar .status-left,
+.status-bar .status-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-bar span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+}
+
+.status-bar svg {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+  display: block;
+  position: relative;
+  top: 1px;
+}
+
+.status-bar .status-dot {
+  position: relative;
+  top: 1px;
+}
+
+.status-bar .status-dot {
+  width: 7px;
+  height: 7px;
+  box-shadow: none;
+}
+
+.status-bar .success {
+  color: var(--app-success);
+}
+
+.status-bar .warning {
+  color: var(--app-warning, #e2b93b);
+}
+
+.status-bar .warning .status-dot {
+  background: var(--app-warning, #e2b93b);
+}
+
+.tab-content .connection-panel {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+}
+
+.tab-content .panel-toolbar {
+  padding: 12px 12px 0;
+  margin-bottom: 0;
+}
+
+.tab-content .connection-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 6px 8px 12px;
+}
+
+.tab-content .connection-list .connection-card,
+.tab-content .connection-list .connection-expanded {
+  flex: 0 0 auto;
+}
+
+.tab-content .empty-list {
+  flex: 1 1 auto;
+}
+
+.debug-workspace {
+  display: flex;
+  padding: 0;
+}
+
+.debug-workspace .debug-panel {
+  flex: 1;
+  height: auto;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.debug-workspace .debug-panel textarea {
+  flex: 1;
+  border: 0;
+  border-radius: 0;
+  resize: none;
+}
+
+.connection-card.expanded {
+  margin-bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-color: color-mix(in srgb, var(--app-primary) 26%, var(--app-border));
+  border-bottom-color: transparent;
+  background: color-mix(in srgb, var(--app-surface) 92%, transparent);
+}
+
+.connection-expanded {
+  margin: 0 0 8px;
+  padding: 4px 12px 10px;
+  border: 1px solid color-mix(in srgb, var(--app-primary) 26%, var(--app-border));
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+  background: color-mix(in srgb, var(--app-surface) 92%, transparent);
+  font-size: 11px;
+}
+
+.connection-expanded .ssh-command-row button {
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--app-muted);
+  background: color-mix(in srgb, var(--app-text) 8%, transparent);
+}
+
+.connection-expanded .ssh-command-row button:hover {
+  color: #fff;
+  background: var(--app-primary);
+}
+
+.connection-expanded .ssh-command-row button svg {
+  width: 11px;
+  height: 11px;
+}
+
+.connection-expanded .info-panel {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 8px 0;
+  margin-top: 4px;
+  border-top: 1px solid var(--app-border);
+  border-radius: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 26px;
+  min-width: 0;
+}
+
+.connection-expanded .info-panel .info-row {
+  padding: 6px 0;
+  min-height: 0;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--app-border) 60%, transparent);
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.connection-expanded .info-panel .info-row:nth-last-child(-n+2) {
+  border-bottom: 0;
+}
+
+.expanded-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.expanded-actions .action-button {
+  flex: 1 1 0;
+  width: auto;
+  justify-content: center;
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.expanded-actions .action-button svg {
+  width: 13px;
+  height: 13px;
 }
 
 .app-toast {
@@ -1770,21 +2211,58 @@ export default {
   white-space: pre-line;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.modal-card {
+  width: min(440px, calc(100vw - 60px));
+  padding: 20px 22px;
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  background: var(--app-surface-raised, var(--app-surface, #2b3038));
+  color: var(--app-text);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.4);
+
+  h2 {
+    font-size: 14px;
+    margin-bottom: 10px;
+    color: var(--app-primary);
+  }
+
+  p {
+    line-height: 1.5;
+    white-space: pre-line;
+    margin-bottom: 16px;
+  }
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.form-tab {
+  display: flex;
+  overflow: hidden;
+}
+
+.form-tab > * {
+  flex: 1;
+  min-width: 0;
+}
+
 .app-toast.error {
   border-color: color-mix(in srgb, #ff6b6b 60%, var(--app-border));
   background: color-mix(in srgb, #ff6b6b 14%, var(--app-surface-raised, var(--app-surface, #2b3038)));
-}
-
-.main-shell.compact-mode {
-  grid-template-columns: 72px minmax(360px, 420px) minmax(480px, 1fr);
-}
-
-.main-shell.detail-collapsed {
-  grid-template-columns: 72px minmax(540px, 600px) 10px;
-}
-
-.main-shell.compact-mode.detail-collapsed {
-  grid-template-columns: 72px minmax(360px, 420px) 10px;
 }
 
 .nav-rail,
@@ -2035,13 +2513,13 @@ export default {
 
 .connection-card {
   width: 100%;
-  min-height: 82px;
+  min-height: 0;
   margin-bottom: 8px;
   border: 1px solid transparent;
   border-radius: 9px;
-  padding: 12px 11px;
+  padding: 11px;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: 42px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   color: var(--app-text);
@@ -2054,6 +2532,43 @@ export default {
 .connection-card.active {
   border-color: color-mix(in srgb, var(--app-primary) 70%, transparent);
   background: color-mix(in srgb, var(--app-primary) 12%, var(--app-bg));
+}
+
+.connection-card.favorite {
+  border-color: color-mix(in srgb, #f7b731 45%, transparent);
+}
+
+.connection-card.favorite:hover {
+  border-color: color-mix(in srgb, #f7b731 75%, transparent);
+}
+
+.connection-card.favorite.expanded {
+  border-bottom-color: transparent;
+}
+
+.connection-card.favorite + .connection-expanded {
+  border-color: color-mix(in srgb, #f7b731 45%, transparent);
+}
+
+.connection-card.expanded:hover + .connection-expanded,
+.connection-expanded:hover {
+  border-color: color-mix(in srgb, var(--app-primary) 70%, transparent);
+}
+
+.connection-card.expanded:has(+ .connection-expanded:hover) {
+  border-color: color-mix(in srgb, var(--app-primary) 70%, transparent);
+  border-bottom-color: transparent;
+  background: color-mix(in srgb, var(--app-primary) 12%, var(--app-bg));
+}
+
+.connection-card.favorite.expanded:hover + .connection-expanded,
+.connection-card.favorite + .connection-expanded:hover {
+  border-color: color-mix(in srgb, #f7b731 75%, transparent);
+}
+
+.connection-card.favorite.expanded:has(+ .connection-expanded:hover) {
+  border-color: color-mix(in srgb, #f7b731 75%, transparent);
+  border-bottom-color: transparent;
 }
 
 .connection-icon {
@@ -2073,17 +2588,17 @@ export default {
 
 .connection-main {
   min-width: 0;
-  min-height: 50px;
+  min-height: 40px;
   display: grid;
-  grid-template-rows: 22px 32px;
+  grid-template-rows: auto auto;
   align-content: center;
-  gap: 3px;
+  gap: 1px;
 }
 
 .compact-mode .connection-card {
-  min-height: 62px;
+  min-height: 0;
   padding: 8px 9px;
-  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-columns: 32px minmax(0, 1fr) auto;
   gap: 8px;
 }
 
@@ -2110,7 +2625,7 @@ export default {
 .connection-meta {
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 12px auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: 10px;
   font-size: 11px;
@@ -2122,7 +2637,7 @@ export default {
 }
 
 .connection-meta.has-reorder {
-  grid-template-columns: minmax(0, 1fr) auto 12px auto;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .compact-mode .connection-meta.has-reorder {
@@ -2191,7 +2706,9 @@ export default {
 
 .reorder-actions {
   display: inline-flex;
+  align-items: center;
   gap: 4px;
+  margin-right: 2px;
 }
 
 .reorder-actions button {
@@ -2203,6 +2720,11 @@ export default {
   background: color-mix(in srgb, var(--app-text) 9%, transparent);
   cursor: pointer;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 13px;
 }
 
 .reorder-actions button:hover {
@@ -2217,8 +2739,13 @@ export default {
 
 .quick-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
+}
+
+.quick-actions .connection-state {
+  margin-right: 4px;
 }
 
 .round-action,
@@ -2233,10 +2760,15 @@ export default {
 }
 
 .round-action {
-  width: 38px;
-  height: 38px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.round-action svg {
+  width: 15px;
+  height: 15px;
 }
 
 .compact-mode .round-action {
@@ -2256,14 +2788,14 @@ export default {
 
 .round-action:not(:disabled):hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--app-primary) 18%, transparent);
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--app-primary) 22%, transparent);
 }
 
 .round-action.open-folder:not(:disabled) {
   color: #ffffff;
   background: linear-gradient(135deg, var(--app-success), color-mix(in srgb, var(--app-success) 58%, var(--app-primary)));
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--app-success) 35%, transparent),
-    0 10px 24px color-mix(in srgb, var(--app-success) 22%, transparent);
+    0 3px 8px color-mix(in srgb, var(--app-success) 20%, transparent);
 }
 
 .round-action.open-folder:not(:disabled):hover {
@@ -2274,7 +2806,7 @@ export default {
   color: #ffffff;
   background: #263238;
   box-shadow: 0 0 0 1px color-mix(in srgb, #ffffff 16%, transparent),
-    0 10px 24px color-mix(in srgb, #263238 24%, transparent);
+    0 3px 8px color-mix(in srgb, #263238 22%, transparent);
 }
 
 .round-action.open-terminal:not(:disabled):hover {
@@ -2284,9 +2816,12 @@ export default {
 .round-action.open-terminal span,
 .terminal-glyph {
   font-family: Consolas, 'Liberation Mono', monospace;
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 10px;
+  font-weight: 700;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .terminal-glyph {
@@ -2447,7 +2982,6 @@ export default {
   color: var(--app-muted);
 }
 
-.settings-grid,
 .about-content {
   min-height: 0;
   padding: 22px;
@@ -2457,7 +2991,204 @@ export default {
 .settings-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 180px;
-  gap: 18px;
+  gap: 14px;
+}
+
+.settings-tab {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.settings-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 12px 0;
+}
+
+.settings-scroll .workspace-card {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+}
+
+.settings-scroll .workspace-header {
+  margin-bottom: 12px;
+  border-bottom: 0;
+  min-height: 0;
+  padding: 6px 4px 0;
+}
+
+.sort-select,
+.field select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PSc2JyB2aWV3Qm94PScwIDAgMTAgNic+PHBhdGggZD0nTTEgMWw0IDQgNC00JyBmaWxsPSdub25lJyBzdHJva2U9JyM5NDljYWInIHN0cm9rZS13aWR0aD0nMS42JyBzdHJva2UtbGluZWNhcD0ncm91bmQnLz48L3N2Zz4=");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+.edit-toggle.icon-only {
+  width: 46px;
+  flex: 0 0 auto;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-toggle.icon-only svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.compact-mode .tab-label,
+.compact-mode .brand-text {
+  display: none;
+}
+
+.compact-mode .tab-item {
+  padding: 6px 8px;
+}
+
+.compact-mode .tab-content .panel-toolbar {
+  padding: 8px 8px 0;
+}
+
+.compact-mode .tab-content .connection-list {
+  padding: 8px 4px 6px 8px;
+}
+
+.compact-mode .search-box {
+  padding: 0 10px;
+  gap: 7px;
+}
+
+.compact-mode .settings-scroll {
+  padding: 8px 8px 0;
+}
+
+.compact-mode .tab-workspace {
+  padding: 8px;
+}
+
+.compact-mode .settings-grid {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.compact-mode .passkey-grid .field {
+  max-width: 100%;
+}
+
+.compact-mode .connection-expanded .info-panel {
+  grid-template-columns: 1fr;
+}
+
+.compact-mode .expanded-actions {
+  flex-wrap: wrap;
+}
+
+.compact-mode .settings-section .settings-actions {
+  grid-template-columns: 1fr;
+}
+
+.settings-grid.is-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.passkey-grid .field {
+  max-width: 50%;
+}
+
+.settings-tab .settings-form-actions {
+  justify-content: space-between;
+}
+
+.settings-form-actions .cancel-action {
+  background: color-mix(in srgb, var(--app-danger, #d64545) 22%, transparent);
+  color: var(--app-text);
+}
+
+.settings-form-actions .cancel-action:hover {
+  background: var(--app-danger, #d64545);
+  color: #fff;
+}
+
+.settings-form-actions .save-action {
+  background: color-mix(in srgb, var(--app-success) 26%, transparent);
+  color: var(--app-text);
+}
+
+.settings-form-actions .save-action:hover {
+  background: var(--app-success);
+  color: #fff;
+}
+
+.settings-section {
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 12px;
+  background: color-mix(in srgb, var(--app-surface) 60%, transparent);
+}
+
+.settings-section h2 {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--app-primary);
+}
+
+.settings-section .toggle-list,
+.settings-section .settings-actions {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.settings-section .settings-grid + .toggle-list {
+  margin-top: 12px;
+}
+
+.settings-section .toggle-list + .settings-grid {
+  margin-top: 12px;
+}
+
+.settings-section .settings-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.settings-section .settings-actions .action-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.settings-tab .settings-form-actions {
+  padding: 6px 12px;
+  border-top: 1px solid var(--app-border);
+  background: color-mix(in srgb, var(--app-surface) 86%, transparent);
+  align-items: center;
+}
+
+.settings-tab .settings-form-actions .btn {
+  min-width: 110px;
+  margin-bottom: 0;
 }
 
 .field {
@@ -3040,19 +3771,4 @@ export default {
   margin: 0;
 }
 
-@media (max-width: 1180px) {
-  .main-shell {
-    grid-template-columns: 64px minmax(460px, 520px) minmax(400px, 1fr);
-    padding: 12px;
-    gap: 12px;
-  }
-
-  .detail-body {
-    grid-template-columns: 1fr;
-  }
-
-  .actions-panel {
-    align-self: stretch;
-  }
-}
 </style>

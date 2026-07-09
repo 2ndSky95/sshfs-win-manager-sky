@@ -58,6 +58,7 @@ body {
   user-select: none;
   background: var(--app-bg);
   color: var(--app-text);
+  overflow: hidden;
 }
 
 body,
@@ -910,7 +911,6 @@ body[data-theme] .window {
 }
 
 body[data-theme] .content-container,
-body[data-theme] .connection-list,
 body[data-theme] .left,
 body[data-theme] .debug-panel {
   background: var(--app-surface) !important;

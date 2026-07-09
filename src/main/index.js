@@ -1,12 +1,21 @@
 import { app, BrowserWindow, Menu, Tray, clipboard, dialog, ipcMain, shell } from 'electron'
 import path from 'path'
 import { mkdir, readFile, writeFile } from 'fs/promises'
-import { existsSync } from 'fs'
+import { existsSync, cpSync } from 'fs'
 import { spawn, execFile } from 'child_process'
 import { promisify } from 'util'
 
 const isSecondInstance = !app.requestSingleInstanceLock()
-const userDataPath = path.join(app.getPath('appData'), 'sshfs-win-manager-evo')
+const userDataPath = path.join(app.getPath('appData'), 'sshfs-win-manager-sky')
+const legacyEvoDataPath = path.join(app.getPath('appData'), 'sshfs-win-manager-evo')
+
+if (!existsSync(userDataPath) && existsSync(legacyEvoDataPath)) {
+  try {
+    cpSync(legacyEvoDataPath, userDataPath, { recursive: true })
+  } catch {
+    // If the copy fails, the app starts with a fresh profile instead of crashing.
+  }
+}
 
 let mainWindow = null
 let tray = null
@@ -182,7 +191,7 @@ function getLegacyConnections (data) {
   return []
 }
 
-app.setName('SSHFS-Win Manager Evo')
+app.setName('SSHFS-Win Manager Sky')
 app.setPath('userData', userDataPath)
 const appStatePath = path.join(app.getPath('userData'), 'app-state.json')
 
@@ -230,6 +239,11 @@ function createAppWindow (name, route, options) {
   })
   win.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
     safeLog('error', `[renderer:${name}] failed to load ${validatedURL}: ${errorCode} ${errorDescription}`)
+  })
+  win.webContents.on('console-message', (event, level, message, line, sourceId) => {
+    if (level >= 2) {
+      safeLog('error', `[renderer:${name}] ${message} (${sourceId}:${line})`)
+    }
   })
   win.loadURL(getWindowUrl(route))
 
@@ -279,6 +293,30 @@ ipcMain.on('window:hide-current', event => {
 ipcMain.on('window:minimize-current', event => {
   const win = getSenderWindow(event)
   if (win) win.minimize()
+})
+
+ipcMain.handle('window:get-position', event => {
+  const win = getSenderWindow(event)
+  return win && !win.isDestroyed() ? win.getPosition() : [0, 0]
+})
+
+ipcMain.on('window:set-position', (event, pos) => {
+  const win = getSenderWindow(event)
+  if (win && !win.isDestroyed()) {
+    win.setPosition(Math.round(pos.x), Math.round(pos.y))
+  }
+})
+
+ipcMain.on('main-window:set-size', (event, size) => {
+  const win = getSenderWindow(event)
+  if (win && !win.isDestroyed()) {
+    const bounds = win.getBounds()
+    win.setBounds({
+      ...bounds,
+      width: Math.round(size.width),
+      height: Math.round(size.height || bounds.height)
+    })
+  }
 })
 
 ipcMain.handle('dialog:select-private-key', async () => {
@@ -475,16 +513,16 @@ if (isSecondInstance) {
 
   app.on('ready', () => {
     mainWindow = createAppWindow('main-window', '', {
-      title: 'SSHFS-Win Manager Evo',
-      height: 760,
-      width: 1440,
-      minHeight: 650,
-      minWidth: 700,
+      title: 'SSHFS-Win Manager Sky',
+      height: 700,
+      width: 680,
       useContentSize: true,
       frame: false,
-      maximizable: true,
+      thickFrame: false,
+      backgroundColor: '#0d1117',
+      maximizable: false,
       minimizable: true,
-      resizable: true
+      resizable: false
     })
 
     if (!process.argv.includes('--systray')) {
@@ -524,7 +562,7 @@ if (isSecondInstance) {
       }
     ])
 
-    tray.setToolTip('SSHFS-Win Manager Evo')
+    tray.setToolTip('SSHFS-Win Manager Sky')
     tray.setContextMenu(trayMenu)
 
     tray.on('click', () => {

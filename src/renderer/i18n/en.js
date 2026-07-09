@@ -1,6 +1,6 @@
-export default {
+﻿export default {
   app: {
-    name: 'SSHFS-Win Manager Evo',
+    name: 'SSHFS-Win Manager Sky',
     serviceActive: 'Service active',
     serviceActiveShort: 'Active'
   },
@@ -46,6 +46,7 @@ export default {
     emptyText: 'Add your first connection to get started.',
     moveUp: 'Move up',
     moveDown: 'Move down',
+    details: 'Details',
     addFavorite: 'Add to favorites',
     removeFavorite: 'Remove from favorites'
   },
@@ -77,12 +78,22 @@ export default {
   settings: {
     title: 'Settings',
     subtitle: 'General configuration, theme, and connection import/export.',
+    sectionGeneral: 'General',
+    sectionPasskey: 'Passkey',
+    sectionData: 'Backup & import connections',
     sshfsBinary: 'SSHFS binary',
-    processTimeout: 'Process timeout',
+    processTimeout: 'Connection timeout (sec)',
     theme: 'Theme',
     language: 'Language',
     languageFr: 'Français',
     languageEn: 'English',
+    languageDe: 'Deutsch',
+    languageEs: 'Español',
+    languageIt: 'Italiano',
+    languageZh: '中文',
+    passkeyEnabled: 'Passkey (encrypt passwords)',
+    passkeyDisableTitle: 'Disable passkey?',
+    passkeyDisableConfirm: 'Warning: stored server passwords will be kept in PLAIN TEXT in the configuration file. Anyone with access to your files can read them.\n\nThe passkey will be requested once to decrypt the existing passwords.',
     passkeyRetention: 'Passkey retention',
     passkeyAlways: 'Always ask',
     passkey1h: '1 hour',
@@ -110,11 +121,11 @@ export default {
     legacyImportConfirmWithPasswords: '{count} connection(s) found in the legacy configuration.\n\nFile: {filePath}\n\nWarning: some connections contain a password stored in the legacy file. They will be imported as-is.\n\nImport and merge with current connections?'
   },
   about: {
-    versionLine: 'Version {version} - Evo edition by Fabrice Simonet.',
-    maintainedBy: 'This edition is maintained by Fabrice Simonet.',
+    versionLine: 'Version {version} - Sky Edition.',
+    maintainedBy: 'Sky Edition — a customized build of SSHFS-Win Manager Evo by Fabrice Simonet.',
     website: 'Website:',
-    basedOn: 'Based on the original SSHFS-Win Manager project created by Evandro Araujo.',
-    license: 'MIT license. Copyright and license notices from the original project are preserved.',
+    basedOn: 'Based on SSHFS-Win Manager Evo (Fabrice Simonet) and the original SSHFS-Win Manager project created by Evandro Araujo.',
+    license: 'MIT license. Copyright and license notices from the original projects are preserved.',
     libraries: 'Main libraries'
   },
   connectionForm: {
@@ -174,8 +185,8 @@ export default {
     password: 'Password',
     passwordOptional: 'Password (optional)',
     passphrase: 'Passphrase',
-    pamTitle: 'PAM/OTP for {user}@{host}',
-    title: '{label} for {user}@{host}'
+    pamTitle: "PAM/OTP for {user}{'@'}{host}",
+    title: "{label} for {user}{'@'}{host}"
   },
   passkeyPrompt: {
     createTitle: 'Create global passkey',
