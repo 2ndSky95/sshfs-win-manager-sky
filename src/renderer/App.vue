@@ -64,6 +64,7 @@ body {
 body,
 html {
   height: 100%;
+  overflow: hidden;
 }
 
 .wrap {

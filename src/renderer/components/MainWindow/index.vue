@@ -3253,6 +3253,7 @@ input[type='number']::-webkit-inner-spin-button {
 }
 
 .settings-toggle {
+  position: relative;
   min-height: 42px;
   border-radius: 8px;
   padding: 0 12px;
