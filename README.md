@@ -1,180 +1,73 @@
-# SSHFS-Win Manager Evo
+# SSHFS-Win Manager Sky
 
-Interface graphique multi-plateforme pour monter des dossiers distants SSH/SFTP avec SSHFS.
+A clean, single-window GUI for mounting remote SSH/SFTP folders as local drives with SSHFS.
 
-SSHFS-Win Manager Evo est un fork modernisé de [SSHFS-Win Manager](https://github.com/evsar3/sshfs-win-manager), créé à l'origine par Evandro Araujo. Cette édition ajoute une interface revue, de nouveaux modes d'authentification, des outils de gestion des connexions et une préparation multi-OS : Windows reste supporté, Linux est disponible en test, et macOS arrive bientôt.
+**Sky Edition** is a design-focused fork of [SSHFS-Win Manager Evo](https://github.com/emulsion-io/sshfs-win-manager-evo) by Fabrice Simonet, which itself modernized the original [SSHFS-Win Manager](https://github.com/evsar3/sshfs-win-manager) by Evandro Araujo.
 
-## Aperçu
+> **Transparency:** This fork is mostly a visual redesign with a handful of small functional changes and bug fixes — the heavy lifting (encryption, authentication modes, connection engine) is Evo's work. It was also built openly in an AI pair-programming workflow with Claude (Fable 5). See the honest changelog below for exactly what changed beyond design.
 
-<p align="center">
-  <img src="imgs/full.png" alt="Vue principale de SSHFS-Win Manager Evo" width="100%">
-</p>
+## Screenshots
 
-Vue principale de SSHFS-Win Manager Evo.
+| Connections | Settings | Compact mode |
+|---|---|---|
+| ![Connections](imgs/sky-connections.png) | ![Settings](imgs/sky-settings.png) | ![Compact](imgs/sky-compact.png) |
 
-Mode compact :
+## The Sky design
 
-![Mode compact de SSHFS-Win Manager Evo](imgs/compact.png)
+The goal was a subtle, unobtrusive tool that feels like a small native utility instead of a website in a window:
 
-Ajout d'une connexion :
+- **One fixed-size, frameless window.** Top tab bar (Favorites / Connections / Settings / Debug / About), thin status bar at the bottom, window controls integrated into the tab bar. The window can be dragged from anywhere.
+- **Everything inline.** Clicking a server unfolds its details and actions directly under the card — no side panel, no extra windows. Adding/editing a connection opens as a full-area view inside the same window.
+- **Quiet visuals.** Compact cards sized to their content, centered action buttons, restrained hover glow, gold outline for favorites, consistent group boxes and button bars across Settings and the connection form.
+- **Compact mode** shrinks the window to 440 px with icon-only tabs for keeping it docked at a screen edge.
 
-![Fenêtre d'ajout d'une connexion](imgs/add.png)
+## What Evo brought (and Sky keeps)
 
-## Fonctionnalités
+All of this is Fabrice Simonet's work in Evo and remains fully intact:
 
-- Montage de dossiers distants SSH/SFTP via SSHFS.
-- Support Windows via SSHFS-Win, Linux via `sshfs`, et préparation macOS via macFUSE/SSHFS.
-- Gestion de plusieurs connexions avec favoris, recherche et tri.
-- Fiche détaillée par connexion avec statut, host, port, utilisateur, chemin distant et point de montage.
-- Icône personnalisable par connexion, affichée dans la liste et dans la fiche détail.
-- Attribution automatique d'une lettre de lecteur libre sous Windows.
-- Points de montage automatiques sous Linux et macOS.
-- Copie rapide d'une commande `ssh` équivalente pour ouvrir la connexion dans un terminal.
-- Ouverture rapide d'une connexion SSH dans un terminal avec le bouton `>_` : Tabby est utilisé s'il est installé, sinon le terminal par défaut de l'OS est ouvert.
-- Pour les connexions par mot de passe, le mot de passe est récupéré via la passkey ou demandé, puis copié dans le presse-papiers pour être collé au prompt SSH.
-- Import/export JSON des connexions.
-- Import de l'ancienne configuration SSHFS-Win Manager depuis `%APPDATA%\sshfs-win-manager\vuex.json`.
-- Interface multilingue avec sélection de la langue dans les paramètres.
-- Mode debug intégré avec logs de connexion.
-- Démarrage avec l'OS et fonctionnement dans la zone de notification.
-- Connexion automatique au démarrage, exécutée de façon séquentielle pour éviter les collisions.
-- Support IPv6 dans les cibles SSHFS.
-- Paramètres avancés SSHFS via options de ligne de commande personnalisées.
+- **Encrypted password storage**: AES-256-GCM with a global passkey (scrypt key derivation) instead of the original's plain-text storage, including automatic migration of legacy plain-text passwords.
+- **Rich authentication**: private key, key + passphrase, PAM/OTP (`keyboard-interactive`), key + passphrase + PAM/OTP, password, password-on-connect.
+- **Reliable startup**: auto-connect runs sequentially, fixing the original's stuck "connecting" state when many servers connect at once; per-connection timeout handling.
+- Connection management: favorites, search, sorting, custom per-connection icons, JSON import/export, legacy configuration import.
+- Quality of life: Tabby/system terminal integration, SSH command copy, IPv6 support, custom SSHFS command-line options, themes, debug logging, tray operation, start with Windows.
+- Modern toolchain: Vue 3 + electron-vite.
 
-## Modes d'authentification
+## Honest changelog — what Sky actually changes
 
-Le logiciel prend en charge plusieurs modes selon la configuration du serveur SSH :
+**Design (the bulk of this fork):** complete single-window tab layout, inline connection details, embedded add/edit form, status bar, compact mode rework, frameless window with integrated controls, countless spacing/sizing refinements.
 
-- `Private Key`
-- `Private Key + Passphrase`
-- `Private Key + PAM/OTP`
-- `Private Key + Passphrase + PAM/OTP`
-- `Password`
-- `Password (ask on connect)`
-- `PAM/OTP only (no key) [BETA]`
+**Functional changes (small, deliberate):**
 
-Les modes PAM/OTP utilisent `keyboard-interactive` et peuvent servir avec des configurations PAM, TOTP, OTP, Radius ou MFA. Les secrets saisis dans les popups de connexion ne sont pas enregistrés dans la configuration.
+- **Passkey on/off switch** in Settings. Turning it off decrypts stored passwords back to plain text (with an explicit warning) and skips all passkey prompts; turning it on re-encrypts them. Toggling always requires entering the passkey.
+- **Three new languages** (German, Spanish, Italian, Chinese — in addition to Evo's English/French); default language is now English.
+- **Data profile migration**: on first start, the Evo profile (`%AppData%\sshfs-win-manager-evo`) is copied to the Sky profile automatically — connections and settings carry over.
+- Default sort mode is now *Manual*; Settings "Cancel" returns to the Connections tab.
+- **Removed:** the demo mode toggle and the separate detail side panel (replaced by inline details). Nothing else was removed.
 
-## Sécurisation des mots de passe
+**Bug fixes (also affect upstream Evo):**
 
-Les mots de passe enregistrés ne sont plus stockés en clair dans la configuration.
+- Fixed a crash that made **every password/passphrase/PAM prompt window unusable**: the `@` in `{user}@{host}` inside translation strings is special syntax in vue-i18n and broke message compilation (blank, unclosable modal). Escaped in all locales.
+- Fixed a race in the password prompt window that showed a permanent "Loading..." state when the store had not hydrated yet.
+- Fixed a CSS data-URI that broke style minification in production builds.
 
-SSHFS-Win Manager Evo utilise une **passkey globale** au logiciel pour chiffrer les secrets directement dans le JSON de configuration. Cela permet de conserver un fichier exportable/importable tout en évitant de laisser les mots de passe lisibles.
+## Install
 
-Fonctionnement :
+Download the installer from [Releases](https://github.com/2ndSky95/sshfs-win-manager-sky/releases) and run it. Requirements: [SSHFS-Win](https://github.com/winfsp/sshfs-win) (with WinFsp) must be installed.
 
-- Les mots de passe sont chiffrés avec `AES-256-GCM`.
-- La clé de chiffrement est dérivée de la passkey globale avec `scrypt`.
-- La passkey n'est pas enregistrée.
-- À l'ouverture, si des secrets chiffrés sont détectés, l'application demande la passkey.
-- La passkey peut être gardée en mémoire temporairement selon le réglage choisi : toujours demander, 1 heure, 12 heures ou 2 jours.
-- Si une connexion en mode `Password` n'a pas encore de mot de passe chiffré, l'application le demande à la connexion puis le chiffre pour les prochaines utilisations.
-- Les anciens mots de passe en clair sont migrés automatiquement vers le format chiffré.
+If you come from Evo: install Sky, verify your connections are there, then uninstall Evo (otherwise two tray apps run in parallel).
 
-Important : si la passkey est perdue, les mots de passe chiffrés ne peuvent pas être récupérés. Les connexions restent présentes, mais les secrets devront être ressaisis.
+### Build from source
 
-## Prérequis
-
-SSHFS-Win Manager Evo pilote le binaire SSHFS disponible sur votre système. Il faut donc installer les composants SSHFS/FUSE adaptés à votre OS avant de lancer une vraie connexion.
-
-### Windows
-
-- [WinFsp](https://winfsp.dev/)
-- [SSHFS-Win](https://github.com/billziss-gh/sshfs-win)
-
-L'application pilote ensuite `sshfs.exe` et monte les dossiers distants comme des lecteurs Windows.
-
-### Linux
-
-- `sshfs`
-- FUSE/fuse3
-
-Exemple Debian, Ubuntu, Linux Mint :
-
-```bash
-sudo apt update
-sudo apt install sshfs fuse3
+```
+npm install
+npm run dev        # development with hot reload
+npm run build:win  # NSIS installer in build/
 ```
 
-Pour construire les paquets Linux depuis Ubuntu/Debian, installer aussi :
+## Credits & license
 
-```bash
-sudo apt install rpm
-```
+- Original project: [SSHFS-Win Manager](https://github.com/evsar3/sshfs-win-manager) — Evandro Araujo
+- Evo edition: [SSHFS-Win Manager Evo](https://github.com/emulsion-io/sshfs-win-manager-evo) — Fabrice Simonet ([emulsion.io](https://emulsion.io))
+- Sky edition: [4-sky.de](https://4-sky.de), built in an open AI pair-programming session with Claude (Fable 5)
 
-### macOS
-
-- [macFUSE](https://macfuse.github.io/)
-- SSHFS pour macFUSE
-
-macOS peut demander d'autoriser macFUSE dans `Réglages système` > `Confidentialité et sécurité`, puis de redémarrer.
-
-Le guide détaillé par OS est disponible dans [install.md](install.md).
-
-## Installation
-
-1. Installez les prérequis SSHFS de votre OS.
-2. Installez ou compilez SSHFS-Win Manager Evo.
-3. Ajoutez une connexion.
-4. Choisissez une lettre de lecteur sous Windows ou un chemin de montage sous Linux/macOS.
-5. Cliquez sur `Connecter`.
-
-## Langues
-
-L'application prend en charge plusieurs langues d'interface.
-
-Langues disponibles actuellement :
-
-- Français
-- Anglais
-
-La langue se change depuis `Paramètres` > `Langue`. Le choix est enregistré dans la configuration locale et réappliqué au prochain lancement.
-
-## Développement
-
-Les informations de développement, de build, de lint et de génération des icônes sont regroupées dans [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Notes importantes
-
-- Le mode `Auto (next free letter)` est géré par l'application sous Windows : une vraie lettre libre est choisie avant le lancement de SSHFS-Win.
-- Sous Linux, les points de montage automatiques sont créés sous `~/sshfs-win-manager-evo`.
-- Sous macOS, les points de montage automatiques sont prévus sous `~/Mounts/sshfs-win-manager-evo`. Le support macOS est en préparation.
-- Certaines authentifications interactives dépendent fortement de la configuration OpenSSH/PAM du serveur.
-- Pour les clés protégées par passphrase et les challenges PAM/OTP, l'application prépare les réponses avant de lancer SSHFS via `SSH_ASKPASS`.
-- Les images personnalisées de connexions sont stockées dans les données de configuration sous forme de data URL.
-
-## Projet original
-
-Ce projet est basé sur SSHFS-Win Manager :
-
-[https://github.com/evsar3/sshfs-win-manager](https://github.com/evsar3/sshfs-win-manager)
-
-Auteur original : Evandro Araujo.
-
-Édition Evo : Fabrice Simonet, [emulsion.io](https://emulsion.io).
-
-## Licence
-
-MIT License
-
-Copyright (c) 2020 Evandro Araujo
-
-Modifications copyright (c) 2026 Fabrice Simonet
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+MIT license. Copyright and license notices of the original projects are preserved.
