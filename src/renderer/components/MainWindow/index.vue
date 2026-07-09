@@ -2,7 +2,7 @@
     <div class="main-shell" :class="{ 'compact-mode': appSettings.compactMode }">
       <header class="tab-bar">
         <div class="brand">
-          <span class="brand-logo" :style="brandLogoStyle"></span>
+          <img class="brand-logo" :src="logoSky" alt="">
           <div class="brand-text">
             <strong>SSHFS-Win</strong>
             <span>Manager <em>Sky</em></span>
@@ -478,7 +478,6 @@ import Icon from '@/components/Icon.vue'
 import AddEditConnectionWindow from '@/components/AddEditConnectionWindow/index.vue'
 
 import logoSky from '@/assets/logo-sky.png'
-import logoWhite from '@/assets/logo-white.png'
 
 function createDemoConnections () {
   const names = [
@@ -1605,14 +1604,6 @@ export default {
       return this.connections.some(conn => conn.status === 'connected') ? 'connected' : 'idle'
     },
 
-    brandLogoStyle () {
-      const mask = `url(${logoWhite})`
-
-      return {
-        maskImage: mask,
-        WebkitMaskImage: mask
-      }
-    },
 
     filteredConnections () {
       const query = this.searchText.trim().toLowerCase()
@@ -1984,13 +1975,7 @@ export default {
   width: 25px;
   height: 25px;
   flex: 0 0 auto;
-  background: color-mix(in srgb, var(--app-primary) 45%, var(--app-text));
-  mask-repeat: no-repeat;
-  mask-size: contain;
-  mask-position: center;
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-size: contain;
-  -webkit-mask-position: center;
+  object-fit: contain;
 }
 
 .tab-item {
