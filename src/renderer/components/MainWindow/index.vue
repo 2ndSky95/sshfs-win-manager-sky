@@ -1984,7 +1984,7 @@ export default {
   width: 25px;
   height: 25px;
   flex: 0 0 auto;
-  background: var(--app-primary);
+  background: color-mix(in srgb, var(--app-primary) 45%, var(--app-text));
   mask-repeat: no-repeat;
   mask-size: contain;
   mask-position: center;

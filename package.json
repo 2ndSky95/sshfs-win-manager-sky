@@ -25,7 +25,6 @@
     "build:mac": "npm run build:clean-output && node scripts/run-electron-vite.cjs build && electron-builder --mac",
     "build:clean": "rimraf out dist/electron dist/web",
     "build:clean-output": "node scripts/clean-build-output.cjs",
-    "icons:generate": "node scripts/generate-icons.cjs",
     "dev": "node scripts/run-electron-vite.cjs dev",
     "dev:tray": "node scripts/run-electron-vite.cjs dev -- --systray",
     "lint": "eslint \"src/**/*.{js,vue}\"",
@@ -63,7 +62,7 @@
       ]
     },
     "linux": {
-      "icon": "build/icons/sshfs-evo-logo-512.png",
+      "icon": "build/icons/app-icon-512.png",
       "category": "Utility",
       "syncDesktopName": true,
       "target": [
