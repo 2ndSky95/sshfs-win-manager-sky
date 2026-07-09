@@ -2,9 +2,7 @@
     <div class="main-shell" :class="{ 'compact-mode': appSettings.compactMode }">
       <header class="tab-bar">
         <div class="brand">
-          <div class="brand-mark">
-            <img class="brand-logo" :src="logoSky" alt="">
-          </div>
+          <span class="brand-logo" :style="brandLogoStyle"></span>
           <div class="brand-text">
             <strong>SSHFS-Win</strong>
             <span>Manager <em>Sky</em></span>
@@ -442,7 +440,6 @@
           <span class="warning"><span class="status-dot"></span> {{ $t('detail.busyCount', { count: busyConnections.length }) }}</span>
         </div>
         <div class="status-right">
-          <img class="status-app-icon" :src="statusIcon" alt="">
           <span class="success"><span class="status-dot"></span> {{ $t('app.serviceActive') }}</span>
         </div>
       </footer>
@@ -481,9 +478,7 @@ import Icon from '@/components/Icon.vue'
 import AddEditConnectionWindow from '@/components/AddEditConnectionWindow/index.vue'
 
 import logoSky from '@/assets/logo-sky.png'
-import statusConnectedIcon from '@/assets/status-connected.png'
-import statusIdleIcon from '@/assets/status-idle.png'
-import statusErrorIcon from '@/assets/status-error.png'
+import logoWhite from '@/assets/logo-white.png'
 
 function createDemoConnections () {
   const names = [
@@ -1610,12 +1605,13 @@ export default {
       return this.connections.some(conn => conn.status === 'connected') ? 'connected' : 'idle'
     },
 
-    statusIcon () {
+    brandLogoStyle () {
+      const mask = `url(${logoWhite})`
+
       return {
-        connected: statusConnectedIcon,
-        idle: statusIdleIcon,
-        error: statusErrorIcon
-      }[this.trayStatus]
+        maskImage: mask,
+        WebkitMaskImage: mask
+      }
     },
 
     filteredConnections () {
@@ -1983,22 +1979,18 @@ export default {
   transform: rotate(180deg);
 }
 
-.tab-bar .brand-mark {
-  width: 28px;
-  height: 28px;
-  margin: 0;
-  border-radius: 8px;
-}
-
-.tab-bar .brand-mark svg {
-  width: 18px;
-  height: 18px;
-}
-
 .tab-bar .brand-logo {
-  width: 22px;
-  height: 22px;
-  object-fit: contain;
+  display: block;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  background: var(--app-primary);
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  -webkit-mask-position: center;
 }
 
 .tab-item {
@@ -2094,12 +2086,6 @@ export default {
   display: flex;
   align-items: center;
   gap: 16px;
-}
-
-.status-bar .status-app-icon {
-  width: 15px;
-  height: 15px;
-  object-fit: contain;
 }
 
 .about-header.workspace-header {
