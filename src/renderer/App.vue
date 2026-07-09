@@ -192,6 +192,31 @@ div.form-item {
   }
 }
 
+/* Recolor the logo's two tones with theme colors: subtle in light themes, stronger in dark */
+body[data-theme] .brand-logo .brand-logo-img {
+  visibility: hidden;
+}
+
+body[data-theme] .brand-logo .brand-logo-tint {
+  display: block;
+}
+
+body[data-theme] .brand-logo .tint-cloud {
+  background: color-mix(in srgb, var(--app-primary) 32%, var(--app-bg));
+}
+
+body[data-theme] .brand-logo .tint-folder {
+  background: color-mix(in srgb, var(--app-primary) 68%, var(--app-bg));
+}
+
+body[data-theme^='dark-'] .brand-logo .tint-cloud {
+  background: color-mix(in srgb, var(--app-primary) 45%, var(--app-bg));
+}
+
+body[data-theme^='dark-'] .brand-logo .tint-folder {
+  background: color-mix(in srgb, var(--app-primary) 85%, var(--app-bg));
+}
+
 select {
   appearance: none !important;
   -webkit-appearance: none !important;

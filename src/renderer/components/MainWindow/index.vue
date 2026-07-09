@@ -2,7 +2,11 @@
     <div class="main-shell" :class="{ 'compact-mode': appSettings.compactMode }">
       <header class="tab-bar">
         <div class="brand">
-          <img class="brand-logo" :src="logoSky" alt="">
+          <span class="brand-logo">
+            <img class="brand-logo-img" :src="logoSky" alt="">
+            <span class="brand-logo-tint tint-cloud" :style="maskStyle(logoMaskFull)"></span>
+            <span class="brand-logo-tint tint-folder" :style="maskStyle(logoMaskHole)"></span>
+          </span>
           <div class="brand-text">
             <strong>SSHFS-Win</strong>
             <span>Manager <em>Sky</em></span>
@@ -478,6 +482,8 @@ import Icon from '@/components/Icon.vue'
 import AddEditConnectionWindow from '@/components/AddEditConnectionWindow/index.vue'
 
 import logoSky from '@/assets/logo-sky.png'
+import logoMaskFull from '@/assets/logo-mask-full.png'
+import logoMaskHole from '@/assets/logo-mask-hole.png'
 
 function createDemoConnections () {
   const names = [
@@ -1348,6 +1354,15 @@ export default {
       return getConnectionMountPoint(conn)
     },
 
+    maskStyle (maskUrl) {
+      const mask = `url(${maskUrl})`
+
+      return {
+        maskImage: mask,
+        WebkitMaskImage: mask
+      }
+    },
+
     addNewConnection () {
       this.connectionFormUuid = null
       this.connectionFormVisible = true
@@ -1743,6 +1758,8 @@ export default {
       trayErrorActive: false,
       trayErrorTimer: null,
       logoSky,
+      logoMaskFull,
+      logoMaskHole,
       passkeyConfirmVisible: false,
       passkeyConfirmResolve: null,
       connectionFormVisible: false,
@@ -1971,11 +1988,29 @@ export default {
 }
 
 .tab-bar .brand-logo {
+  position: relative;
   display: block;
   width: 25px;
   height: 25px;
   flex: 0 0 auto;
+}
+
+.tab-bar .brand-logo-img {
+  width: 100%;
+  height: 100%;
   object-fit: contain;
+}
+
+.tab-bar .brand-logo-tint {
+  display: none;
+  position: absolute;
+  inset: 0;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  -webkit-mask-position: center;
 }
 
 .tab-item {
