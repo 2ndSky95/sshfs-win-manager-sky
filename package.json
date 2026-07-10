@@ -37,7 +37,10 @@
     "executableName": "sshfs-win-manager-sky",
     "artifactName": "sshfs-win-manager-sky-v${version}-${os}-${arch}.${ext}",
     "nsis": {
-      "oneClick": true,
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
       "installerIcon": "build/icons/setup-icon.ico",
       "shortcutName": "SSHFS-Win Manager Sky",
       "uninstallDisplayName": "SSHFS-Win Manager Sky"

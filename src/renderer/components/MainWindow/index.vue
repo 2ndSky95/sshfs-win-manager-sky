@@ -1023,6 +1023,42 @@ export default {
         return { ...conn, password }
       }
 
+      // Plain-text password while the passkey is enabled: always ask, regardless of retention.
+      if (this.appSettings.passkeyEnabled !== false) {
+        if (!window.confirm(this.$t('settings.connectEncryptPrompt'))) {
+          return conn
+        }
+
+        const activePasskey = await SecretManager.getPasskey(this.appSettings, this.getFirstEncryptedPassword() ? 'unlock' : 'create')
+
+        if (!activePasskey) {
+          return null
+        }
+
+        const existingSecret = this.getFirstEncryptedPassword()
+
+        if (existingSecret) {
+          try {
+            SecretManager.decryptWithPasskey(existingSecret, activePasskey)
+          } catch {
+            SecretManager.lock()
+            this.notify(this.$t('notifications.passkeyInvalid'), 'error-icon')
+            return null
+          }
+        }
+
+        this.$store.dispatch('UPDATE_CONNECTION', {
+          ...conn,
+          password: '',
+          secrets: {
+            ...(conn.secrets || {}),
+            password: SecretManager.encryptWithPasskey(conn.password, activePasskey)
+          }
+        })
+
+        return { ...conn }
+      }
+
       return conn
     },
 
