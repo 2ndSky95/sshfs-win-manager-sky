@@ -583,6 +583,7 @@ if (isSecondInstance) {
 
     mainWindow = createAppWindow('main-window', '', {
       title: appName,
+      show: false,
       height: 700,
       width: 680,
       useContentSize: true,
