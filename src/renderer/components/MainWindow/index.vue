@@ -97,7 +97,7 @@
           </div>
         </div>
 
-        <div v-else class="connection-list">
+        <div v-else class="connection-list" :style="{ '--drive-badge-w': driveBadgeWidth }">
           <template v-for="conn in filteredConnections" :key="conn.uuid">
           <button
             type="button"
@@ -115,7 +115,7 @@
             </span>
 
             <span class="connection-main">
-              <strong>{{ conn.name }}</strong>
+              <strong><b class="drive-inline">{{ mountPointLabel(conn) }}</b>{{ conn.name }}</strong>
               <span class="connection-meta">
                 <span>
                   <b>{{ mountPointLabel(conn) }}</b>
@@ -147,7 +147,7 @@
                   ↓
                 </button>
               </span>
-              <span class="connection-state" :class="conn.status"></span>
+              <span class="connection-state" :class="conn.status || 'disconnected'">{{ $t('status.' + (conn.status || 'disconnected')) }}</span>
               <button
                 type="button"
                 class="round-action favorite"
@@ -1660,6 +1660,12 @@ export default {
       return items
     },
 
+    driveBadgeWidth () {
+      const maxLen = Math.max(2, ...this.filteredConnections.map(conn => this.mountPointLabel(conn).length))
+
+      return `calc(${maxLen}ch + 6px)`
+    },
+
     selectedConnection () {
       return this.connections.find(conn => conn.uuid === this.selectedConnectionUuid) || this.filteredConnections[0] || null
     },
@@ -2674,6 +2680,7 @@ export default {
 .connection-card.favorite.expanded:has(+ .connection-expanded:hover) {
   border-color: color-mix(in srgb, #f7b731 75%, transparent);
   border-bottom-color: transparent;
+  background: color-mix(in srgb, #f7b731 10%, var(--app-bg));
 }
 
 .connection-icon {
@@ -2681,6 +2688,22 @@ export default {
   height: 40px;
   border-radius: 9px;
   overflow: hidden;
+}
+
+.connection-card.favorite .connection-icon {
+  color: #f7b731;
+  background: color-mix(in srgb, #f7b731 16%, transparent);
+  border-color: color-mix(in srgb, #f7b731 45%, transparent);
+}
+
+.connection-card.favorite .connection-main b {
+  background: #f7b731;
+  color: #1c1500;
+}
+
+.connection-card.favorite:hover,
+.connection-card.favorite.active {
+  background: color-mix(in srgb, #f7b731 10%, var(--app-bg));
 }
 
 .connection-icon img,
@@ -2702,7 +2725,7 @@ export default {
 
 .compact-mode .connection-card {
   min-height: 0;
-  padding: 8px 9px;
+  padding: 5px 6px;
   grid-template-columns: 32px minmax(0, 1fr) auto;
   gap: 8px;
 }
@@ -2714,9 +2737,28 @@ export default {
 }
 
 .compact-mode .connection-main {
-  min-height: 38px;
-  grid-template-rows: 18px 24px;
-  gap: 2px;
+  min-height: 32px;
+  grid-template-rows: auto;
+  gap: 0;
+}
+
+.connection-main strong .drive-inline {
+  display: none;
+}
+
+.compact-mode .connection-main strong .drive-inline {
+  display: inline-flex;
+}
+
+.compact-mode .connection-meta {
+  display: none;
+}
+
+.compact-mode .connection-main strong {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 
 .connection-main strong {
@@ -2760,10 +2802,12 @@ export default {
 .connection-main b,
 .detail-title b {
   display: inline-flex;
+  width: var(--drive-badge-w, auto);
   min-width: 24px;
+  flex-shrink: 0;
   justify-content: center;
   margin-right: 6px;
-  padding: 1px 6px;
+  padding: 1px 0;
   border-radius: 5px;
   color: #ffffff;
   background: var(--app-primary);
@@ -2771,9 +2815,10 @@ export default {
 }
 
 .compact-mode .connection-main b {
-  min-width: 19px;
+  width: var(--drive-badge-w, auto);
+  min-width: 20px;
   margin-right: 0;
-  padding: 1px 5px;
+  padding: 1px 0;
   font-size: 10px;
   border-radius: 4px;
 }
@@ -2790,23 +2835,55 @@ export default {
 }
 
 .connection-state {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--app-muted);
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 50px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--app-muted);
+  background: color-mix(in srgb, var(--app-muted) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--app-muted) 35%, transparent);
 }
 
 .connection-state.connected {
-  background: var(--app-success);
+  color: var(--app-success);
+  background: color-mix(in srgb, var(--app-success) 16%, transparent);
+  border-color: color-mix(in srgb, var(--app-success) 55%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--app-success) 35%, transparent);
 }
 
 .connection-state.connecting,
 .connection-state.disconnecting {
-  background: #f7b731;
+  color: #f7b731;
+  background: color-mix(in srgb, #f7b731 16%, transparent);
+  border-color: color-mix(in srgb, #f7b731 55%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, #f7b731 32%, transparent);
 }
 
 .connection-state.connecting {
   animation: status-pulse 1s ease-in-out infinite;
+}
+
+.compact-mode .connection-state {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  font-size: 0;
+  background: var(--app-muted);
+}
+
+.compact-mode .connection-state.connected {
+  background: var(--app-success);
+}
+
+.compact-mode .connection-state.connecting,
+.compact-mode .connection-state.disconnecting {
+  background: #f7b731;
 }
 
 .reorder-actions {
@@ -2846,7 +2923,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 10px;
 }
 
 .quick-actions .connection-state {
@@ -2865,20 +2942,27 @@ export default {
 }
 
 .round-action {
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
+  padding: 4px;
   transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
 }
 
 .round-action svg {
-  width: 15px;
-  height: 15px;
+  width: 19px;
+  height: 19px;
 }
 
 .compact-mode .round-action {
   width: 28px;
   height: 28px;
+  padding: 0;
+}
+
+.compact-mode .round-action svg {
+  width: 15px;
+  height: 15px;
 }
 
 .compact-mode .quick-actions {
@@ -2893,14 +2977,14 @@ export default {
 
 .round-action:not(:disabled):hover {
   transform: translateY(-1px);
-  box-shadow: 0 3px 8px color-mix(in srgb, var(--app-primary) 22%, transparent);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--app-primary) 30%, transparent);
 }
 
 .round-action.open-folder:not(:disabled) {
   color: #ffffff;
   background: linear-gradient(135deg, var(--app-success), color-mix(in srgb, var(--app-success) 58%, var(--app-primary)));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--app-success) 35%, transparent),
-    0 3px 8px color-mix(in srgb, var(--app-success) 20%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--app-success) 38%, transparent),
+    0 0 8px color-mix(in srgb, var(--app-success) 25%, transparent);
 }
 
 .round-action.open-folder:not(:disabled):hover {
@@ -2910,8 +2994,8 @@ export default {
 .round-action.open-terminal:not(:disabled) {
   color: #ffffff;
   background: #263238;
-  box-shadow: 0 0 0 1px color-mix(in srgb, #ffffff 16%, transparent),
-    0 3px 8px color-mix(in srgb, #263238 22%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, #ffffff 18%, transparent),
+    0 0 6px color-mix(in srgb, #90a4ae 20%, transparent);
 }
 
 .round-action.open-terminal:not(:disabled):hover {
@@ -2947,6 +3031,11 @@ export default {
 .icon-button:hover {
   color: #ffffff;
   background: var(--app-primary);
+}
+
+.round-action.primary {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--app-primary) 38%, transparent),
+    0 0 8px color-mix(in srgb, var(--app-primary) 25%, transparent);
 }
 
 .round-action.favorite.active,
@@ -3161,7 +3250,8 @@ input[type='number']::-webkit-inner-spin-button {
 }
 
 .compact-mode .tab-content .connection-list {
-  padding: 8px 4px 6px 8px;
+  padding: 8px 2px 6px 8px;
+  scrollbar-gutter: stable;
 }
 
 .compact-mode .search-box {
