@@ -1292,7 +1292,19 @@ export default {
 
             this.selectConnection(conn)
             resolve()
-          }).catch(error => {
+          }).catch(async error => {
+            // "Mount point in use" usually means an sshfs process from a
+            // previous session still serves this mount: adopt it instead.
+            if (String(error).includes('Mount point in use')) {
+              await this.adoptRunningMounts()
+
+              if (conn.status === 'connected') {
+                this.selectConnection(conn)
+                resolve()
+                return
+              }
+            }
+
             this.$store.dispatch('UPDATE_CONNECTION_STATUS', {
               uuid: conn.uuid,
               pid: null,
@@ -1346,7 +1358,39 @@ export default {
       })
     },
 
-    disconnect (conn) {
+    connectionTargetString (conn) {
+      return `${conn.user}@${String(conn.host || '').trim()}:${conn.folder}`
+    },
+
+    async adoptRunningMounts () {
+      const running = await ProcessManager.listRunningSshfs()
+
+      if (!running.length) {
+        return
+      }
+
+      const usedPids = new Set()
+
+      for (const conn of this.connections) {
+        if (conn.status === 'connected') {
+          continue
+        }
+
+        const target = this.connectionTargetString(conn)
+        const match = running.find(proc => !usedPids.has(proc.pid) && proc.commandLine && proc.commandLine.includes(target))
+
+        if (match) {
+          usedPids.add(match.pid)
+          conn.pid = match.pid
+          conn.status = 'connected'
+          ProcessManager.adopt(match.pid, conn)
+        }
+      }
+
+      this.updateConnectionList()
+    },
+
+    async disconnect (conn) {
       if (this.appSettings.demoMode && conn.demo) {
         conn.status = 'disconnected'
         conn.pid = null
@@ -1355,7 +1399,27 @@ export default {
 
       conn.status = 'disconnecting'
 
-      ProcessManager.terminate(conn.pid, conn).then(() => {
+      let pid = conn.pid
+
+      // Status said connected but we lost the pid (e.g. stale state):
+      // find the real sshfs process for this target before giving up.
+      if (!pid) {
+        const target = this.connectionTargetString(conn)
+        const running = await ProcessManager.listRunningSshfs()
+        const match = running.find(proc => proc.commandLine && proc.commandLine.includes(target))
+
+        pid = match ? match.pid : null
+      }
+
+      if (!pid) {
+        conn.pid = null
+        conn.status = 'disconnected'
+        this.updateConnectionList()
+        return
+      }
+
+      ProcessManager.terminate(pid, conn).then(() => {
+        conn.pid = null
         conn.status = 'disconnected'
 
         this.updateConnectionList()
@@ -1890,19 +1954,21 @@ export default {
       originalConsoleLog(...args)
     }
 
-    const startupConnections = []
-
     this.connections.forEach(conn => {
       conn.status = 'disconnected'
       conn.pid = null
-      if (conn.advanced.connectOnStartup) {
-        startupConnections.push(conn)
-      }
     })
 
     const runStartupConnections = async () => {
-      for (const conn of startupConnections) {
-        await this.connect(conn)
+      // Adopt sshfs processes that survived the previous session (crash,
+      // forced quit, Windows restart) so the shown status matches reality
+      // and we don't run into "mount point in use" on reconnect.
+      await this.adoptRunningMounts()
+
+      for (const conn of this.connections) {
+        if (conn.advanced.connectOnStartup && conn.status !== 'connected') {
+          await this.connect(conn)
+        }
       }
     }
 

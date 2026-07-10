@@ -102,7 +102,7 @@
     passkey2d: '2 days',
     startupWithOS: 'Start with Windows',
     displayTrayMessageOnClose: 'Tray message on close',
-    closeWindowQuits: 'Closing the window quits the app (disconnects all)',
+    closeWindowQuits: 'Close quits the app',
     startInTray: 'Start in tray',
     blurAddresses: 'Blur server addresses',
     showDebugPanel: 'Show debug panel',

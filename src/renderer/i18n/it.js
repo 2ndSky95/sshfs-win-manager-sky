@@ -102,7 +102,7 @@ export default {
     passkey2d: '2 giorni',
     startupWithOS: 'Avvia con Windows',
     displayTrayMessageOnClose: 'Avviso nella tray alla chiusura',
-    closeWindowQuits: 'Chiudere la finestra chiude l’app (disconnette tutto)',
+    closeWindowQuits: 'Chiudi esce dall’applicazione',
     startInTray: 'Avvia nella tray',
     blurAddresses: 'Sfoca gli indirizzi dei server',
     showDebugPanel: 'Mostra pannello di debug',

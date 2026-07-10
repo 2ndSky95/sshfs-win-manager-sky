@@ -355,6 +355,26 @@ class ProcessHandlerWin {
     })
   }
 
+  listRunningSshfs () {
+    return new Promise(resolve => {
+      exec('powershell -NoProfile -NonInteractive -Command "Get-CimInstance Win32_Process -Filter \\"Name=\'sshfs.exe\'\\" | ForEach-Object { \'{0}|{1}\' -f $_.ProcessId, $_.CommandLine }"', (err, stdout) => {
+        if (err) {
+          resolve([])
+          return
+        }
+
+        resolve(stdout.toString().trim().split(/\r?\n/).filter(Boolean).map(line => {
+          const sep = line.indexOf('|')
+
+          return {
+            pid: parseInt(line.slice(0, sep), 10),
+            commandLine: line.slice(sep + 1)
+          }
+        }).filter(item => Number.isInteger(item.pid)))
+      })
+    })
+  }
+
   getLastSpawnedProcess () {
     return new Promise((resolve, reject) => {
       exec(`wmic process where '(name="sshfs.exe")' get processid, creationdate /value`, (err, stdout) => {

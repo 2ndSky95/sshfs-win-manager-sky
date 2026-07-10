@@ -101,6 +101,26 @@ class ProcessManager extends EventEmitter {
   getLastSpawnedProcess () {
     return this.processHandler.getLastSpawnedProcess()
   }
+
+  listRunningSshfs () {
+    if (typeof this.processHandler.listRunningSshfs !== 'function') {
+      return Promise.resolve([])
+    }
+
+    return this.processHandler.listRunningSshfs()
+  }
+
+  // Re-attach an sshfs process that outlived the previous app session, so
+  // watch/terminate/terminateAll treat it like one we spawned ourselves.
+  adopt (pid, conn) {
+    if (processList.includes(pid)) {
+      return
+    }
+
+    processList.push(pid)
+    processConnectionList[pid] = conn
+    this.watch(pid)
+  }
 }
 
 const settings = store.state.Settings.settings
