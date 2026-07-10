@@ -773,6 +773,26 @@ export default {
       }
 
       this.$store.dispatch('IMPORT_CONNECTIONS', connections)
+
+      await this.offerEncryptImportedPasswords()
+    },
+
+    async offerEncryptImportedPasswords () {
+      if (this.appSettings.passkeyEnabled === false) {
+        return
+      }
+
+      const hasPlainTextPasswords = this.$store.state.Data.connections.some(conn => conn && conn.password && conn.authType !== 'key-file')
+
+      if (!hasPlainTextPasswords) {
+        return
+      }
+
+      if (!window.confirm(this.$t('settings.importEncryptPrompt'))) {
+        return
+      }
+
+      await this.migratePlainTextPasswords()
     },
 
     async importLegacyConfiguration () {
@@ -819,6 +839,8 @@ export default {
       }
 
       this.notify(this.$t('notifications.legacyImportDone', { count: importedConnections.length }))
+
+      await this.offerEncryptImportedPasswords()
     },
 
     prepareLegacyConnections (connections) {
@@ -1037,7 +1059,7 @@ export default {
     },
 
     async migratePlainTextPasswords () {
-      const plainPasswordConnections = this.$store.state.Data.connections.filter(conn => conn.authType === 'password' && conn.password)
+      const plainPasswordConnections = this.$store.state.Data.connections.filter(conn => conn.password && conn.authType !== 'key-file')
       const existingEncryptedSecret = this.getFirstEncryptedPassword()
 
       if (!plainPasswordConnections.length) {

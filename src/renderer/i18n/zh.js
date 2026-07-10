@@ -113,6 +113,7 @@ export default {
     connections: '连接',
     timeInSeconds: '时间（秒）',
     importConfirm: '导入 {count} 个连接？这将替换当前的连接列表。',
+    importEncryptPrompt: '导入的连接包含明文密码。\n\n现在用 Passkey 加密吗？\n是 = 输入或设置 Passkey。否 = 保持明文并在无 Passkey 的情况下连接。',
     exportFailed: '导出失败，请重试。',
     invalidImportJson: '导入文件无效：JSON 解析失败。',
     invalidImportConnections: '导入文件无效：未找到连接列表。',

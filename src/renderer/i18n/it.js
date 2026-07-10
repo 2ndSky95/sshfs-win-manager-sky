@@ -113,6 +113,7 @@ export default {
     connections: 'Connessioni',
     timeInSeconds: 'Tempo in secondi',
     importConfirm: 'Importare {count} connessione/i? La lista attuale verrà sostituita.',
+    importEncryptPrompt: 'Le connessioni importate contengono password in chiaro.\n\nCifrarle ora con il passkey?\nSì = inserisci o imposta il passkey. No = restano in chiaro e si connettono senza passkey.',
     exportFailed: 'Esportazione non riuscita. Riprova.',
     invalidImportJson: 'File di importazione non valido: impossibile leggere il JSON.',
     invalidImportConnections: 'File di importazione non valido: lista delle connessioni non trovata.',

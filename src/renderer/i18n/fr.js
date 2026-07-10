@@ -113,6 +113,7 @@
     connections: 'Connexions',
     timeInSeconds: 'Temps en secondes',
     importConfirm: 'Importer {count} connexion(s) ? Cela remplacera la liste actuelle.',
+    importEncryptPrompt: 'Les connexions importées contiennent des mots de passe en clair.\n\nLes chiffrer maintenant avec le passkey ?\nOui = saisir ou définir le passkey. Non = ils restent en clair et se connectent sans passkey.',
     exportFailed: 'Export impossible. Réessaie.',
     invalidImportJson: 'Fichier d’import invalide : le JSON ne peut pas être lu.',
     invalidImportConnections: 'Fichier d’import invalide : liste des connexions introuvable.',

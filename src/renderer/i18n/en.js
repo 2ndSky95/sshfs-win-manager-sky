@@ -113,6 +113,7 @@
     connections: 'Connections',
     timeInSeconds: 'Time in seconds',
     importConfirm: 'Import {count} connection(s)? This will replace the current connection list.',
+    importEncryptPrompt: 'The imported connections contain plain-text passwords.\n\nEncrypt them with your passkey now?\nYes = enter or set your passkey. No = they stay in plain text and connect without the passkey.',
     exportFailed: 'Export failed. Please try again.',
     invalidImportJson: 'Invalid import file: JSON parsing failed.',
     invalidImportConnections: 'Invalid import file: connections array not found.',

@@ -113,6 +113,7 @@
     connections: 'Verbindungen',
     timeInSeconds: 'Zeit in Sekunden',
     importConfirm: '{count} Verbindung(en) importieren? Die aktuelle Verbindungsliste wird ersetzt.',
+    importEncryptPrompt: 'Die importierten Verbindungen enthalten Klartext-Passwörter.\n\nJetzt mit dem Passkey verschlüsseln?\nJa = Passkey eingeben oder festlegen. Nein = bleiben im Klartext und verbinden ohne Passkey.',
     exportFailed: 'Export fehlgeschlagen. Bitte erneut versuchen.',
     invalidImportJson: 'Ungültige Importdatei: JSON konnte nicht gelesen werden.',
     invalidImportConnections: 'Ungültige Importdatei: Verbindungsliste nicht gefunden.',
