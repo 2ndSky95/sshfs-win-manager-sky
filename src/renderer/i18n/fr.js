@@ -157,7 +157,6 @@
     pathPlaceholder: 'ex. /home/john',
     local: 'Local',
     driveLetter: 'Lettre de lecteur',
-    driveInUse: 'occupé',
     mountPath: 'Chemin de montage',
     mountPathPlaceholder: 'ex. /home/moi/montages/serveur',
     selectMountPath: 'Sélectionner le dossier de montage',
