@@ -90,10 +90,7 @@
           <h1 class="section-title">{{ $t('connectionForm.local') }}</h1>
           <div v-if="usesDriveLetters" class="form-item">
             <label>{{ $t('connectionForm.driveLetter') }}</label>
-            <select v-model="conn.mountPoint">
-              <option value="auto">{{ $t('connectionForm.autoDrive') }}</option>
-              <option v-for="drive in drives" :value="drive + ':'" :key="drive" :class="{ 'drive-used': usedDrives.includes(drive) }">{{drive}}:</option>
-            </select>
+            <DriveSelect v-model="conn.mountPoint" :drives="drives" :used-drives="usedDrives" :auto-label="$t('connectionForm.autoDrive')"/>
           </div>
           <div v-else class="form-item">
             <label>{{ $t('connectionForm.mountPath') }}</label>
@@ -142,6 +139,7 @@ import Tab from '@/components/Tabs/Tab.vue'
 import SwitchLabel from '@/components/SwitchLabel.vue'
 import CustomCmdlOptions from './CustomCmdlOptions.vue'
 import Icon from '../Icon.vue'
+import DriveSelect from '@/components/DriveSelect.vue'
 import SecretManager from '@/SecretManager.js'
 import { currentPlatform, getAutoMountPoint, usesDriveLetters } from '@/platform/index.js'
 
@@ -167,7 +165,8 @@ export default {
     Tab,
     SwitchLabel,
     CustomCmdlOptions,
-    Icon
+    Icon,
+    DriveSelect
   },
 
   methods: {
@@ -530,7 +529,4 @@ export default {
 
 }
 
-select option.drive-used {
-  color: #f7b731;
-}
 </style>
