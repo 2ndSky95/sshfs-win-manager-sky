@@ -2615,13 +2615,13 @@ export default {
 
 .panel-toolbar {
   display: grid;
-  grid-template-columns: 1fr 90px;
+  grid-template-columns: 1fr 110px;
   gap: 10px;
   margin-bottom: 16px;
 }
 
 .panel-toolbar.has-edit-toggle {
-  grid-template-columns: 1fr auto 90px;
+  grid-template-columns: 1fr auto 110px;
 }
 
 .search-box {
