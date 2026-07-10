@@ -321,6 +321,11 @@
                   <span class="toggle-text">{{ $t('settings.displayTrayMessageOnClose') }}</span>
                 </label>
                 <label class="settings-toggle">
+                  <input v-model="settingsForm.closeWindowQuits" type="checkbox">
+                  <span class="switch-track"></span>
+                  <span class="toggle-text">{{ $t('settings.closeWindowQuits') }}</span>
+                </label>
+                <label class="settings-toggle">
                   <input v-model="settingsForm.blurAddresses" type="checkbox">
                   <span class="switch-track"></span>
                   <span class="toggle-text">{{ $t('settings.blurAddresses') }}</span>
@@ -617,7 +622,13 @@ export default {
       }, true)
     },
 
-    windowClose () {
+    async windowClose () {
+      if (this.appSettings.closeWindowQuits) {
+        await ProcessManager.terminateAll()
+        ipcRenderer.send('app:quit')
+        return
+      }
+
       ipcRenderer.send('window:hide-current')
       this.showRunningInBackgroundNotification()
     },

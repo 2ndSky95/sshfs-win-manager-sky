@@ -102,6 +102,7 @@
     passkey2d: '2 Tage',
     startupWithOS: 'Mit Windows starten',
     displayTrayMessageOnClose: 'Tray-Hinweis beim Schließen',
+    closeWindowQuits: 'Fenster schließen beendet die App (trennt alles)',
     startInTray: 'Im Tray starten',
     blurAddresses: 'Server-Adressen unscharf anzeigen',
     showDebugPanel: 'Debug-Panel anzeigen',

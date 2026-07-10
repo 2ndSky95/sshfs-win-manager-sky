@@ -304,6 +304,10 @@ ipcMain.on('window:close-current', event => {
   if (win) win.close()
 })
 
+ipcMain.on('app:quit', () => {
+  app.quit()
+})
+
 ipcMain.on('window:hide-current', event => {
   const win = getSenderWindow(event)
   if (win) win.hide()
@@ -564,6 +568,19 @@ if (isSecondInstance) {
   })
 
   app.on('ready', () => {
+    // Re-sync the login item from stored settings so stale autostart entries
+    // (e.g. registered without --systray by an older version) heal themselves.
+    if (app.isPackaged) {
+      readFile(appStatePath, 'utf8').then(raw => {
+        const settings = ((JSON.parse(raw) || {}).Settings || {}).settings || {}
+
+        app.setLoginItemSettings({
+          openAtLogin: settings.startupWithOS !== false,
+          args: settings.startInTray !== false ? ['--systray'] : []
+        })
+      }).catch(() => {})
+    }
+
     mainWindow = createAppWindow('main-window', '', {
       title: appName,
       height: 700,
@@ -600,7 +617,7 @@ if (isSecondInstance) {
         click () {
           mainWindow.webContents.send('terminate-child-processes')
 
-          ipcMain.on('child-processes-terminated', () => {
+          ipcMain.once('child-processes-terminated', () => {
             app.quit()
           })
         }
