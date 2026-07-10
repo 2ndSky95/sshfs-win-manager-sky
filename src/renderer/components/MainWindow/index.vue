@@ -2601,13 +2601,13 @@ export default {
 
 .panel-toolbar {
   display: grid;
-  grid-template-columns: 1fr 76px;
+  grid-template-columns: 1fr 80px;
   gap: 10px;
   margin-bottom: 16px;
 }
 
 .panel-toolbar.has-edit-toggle {
-  grid-template-columns: 1fr auto 76px;
+  grid-template-columns: 1fr auto 80px;
 }
 
 .search-box {
