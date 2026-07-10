@@ -2601,13 +2601,13 @@ export default {
 
 .panel-toolbar {
   display: grid;
-  grid-template-columns: 1fr 110px;
+  grid-template-columns: 1fr 90px;
   gap: 10px;
   margin-bottom: 16px;
 }
 
 .panel-toolbar.has-edit-toggle {
-  grid-template-columns: 1fr auto 110px;
+  grid-template-columns: 1fr auto 90px;
 }
 
 .search-box {
@@ -2639,8 +2639,14 @@ export default {
 
 .sort-select :deep(.app-select-trigger) {
   height: 46px;
+  padding: 0 8px;
+  gap: 4px;
   font-size: 13px;
   background: color-mix(in srgb, var(--app-bg) 46%, transparent);
+}
+
+.sort-select :deep(.app-select-trigger .chevron) {
+  width: 8px;
 }
 
 .edit-toggle {
@@ -3106,8 +3112,13 @@ export default {
   background: color-mix(in srgb, #f7b731 16%, transparent);
 }
 
-.round-action.favorite:not(:disabled):hover {
-  box-shadow: 0 3px 10px color-mix(in srgb, #f7b731 30%, transparent);
+.round-action.favorite.active:not(:disabled) {
+  box-shadow: 0 0 0 1px color-mix(in srgb, #f7b731 38%, transparent);
+}
+
+.round-action.favorite.active:not(:disabled):hover {
+  box-shadow: 0 0 0 1px color-mix(in srgb, #f7b731 45%, transparent),
+    0 3px 10px color-mix(in srgb, #f7b731 30%, transparent);
 }
 
 .detail-panel {
