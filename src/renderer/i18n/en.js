@@ -107,7 +107,6 @@
     blurAddresses: 'Blur server addresses',
     showDebugPanel: 'Show debug panel',
     compactMode: 'Compact mode',
-    demoMode: 'Demo mode',
     exportJson: 'Export JSON',
     importJson: 'Import JSON',
     importLegacy: 'Import legacy configuration',

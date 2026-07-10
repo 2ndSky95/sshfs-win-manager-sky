@@ -107,7 +107,6 @@ export default {
     blurAddresses: '模糊服务器地址',
     showDebugPanel: '显示调试面板',
     compactMode: '紧凑模式',
-    demoMode: '演示模式',
     exportJson: '导出 JSON',
     importJson: '导入 JSON',
     importLegacy: '导入旧版配置',

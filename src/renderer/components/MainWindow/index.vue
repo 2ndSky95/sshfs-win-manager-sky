@@ -316,14 +316,14 @@
                   <span class="toggle-text">{{ $t('settings.startInTray') }}</span>
                 </label>
                 <label class="settings-toggle">
-                  <input v-model="settingsForm.displayTrayMessageOnClose" type="checkbox">
-                  <span class="switch-track"></span>
-                  <span class="toggle-text">{{ $t('settings.displayTrayMessageOnClose') }}</span>
-                </label>
-                <label class="settings-toggle">
                   <input v-model="settingsForm.closeWindowQuits" type="checkbox">
                   <span class="switch-track"></span>
                   <span class="toggle-text">{{ $t('settings.closeWindowQuits') }}</span>
+                </label>
+                <label class="settings-toggle" :class="{ 'is-disabled': settingsForm.closeWindowQuits }">
+                  <input v-model="settingsForm.displayTrayMessageOnClose" type="checkbox" :disabled="settingsForm.closeWindowQuits">
+                  <span class="switch-track"></span>
+                  <span class="toggle-text">{{ $t('settings.displayTrayMessageOnClose') }}</span>
                 </label>
                 <label class="settings-toggle">
                   <input v-model="settingsForm.blurAddresses" type="checkbox">
@@ -490,49 +490,6 @@ import AddEditConnectionWindow from '@/components/AddEditConnectionWindow/index.
 import logoSky from '@/assets/logo-sky.png'
 import logoMaskFull from '@/assets/logo-mask-full.png'
 import logoMaskHole from '@/assets/logo-mask-hole.png'
-
-function createDemoConnections () {
-  const names = [
-    ['Production Web', 'prod.web.example.com', '/var/www/current', 'P:', 'connected', true],
-    ['Staging API', 'staging-api.example.net', '/srv/api', 'S:', 'connected', false],
-    ['Backups Vault', 'backup01.example.org', '/data/backups', 'B:', 'disconnected', true],
-    ['Client Alpha', 'alpha.sftp.demo', '/home/clients/alpha', 'A:', 'connected', false],
-    ['Client Bravo', 'bravo.sftp.demo', '/home/clients/bravo', 'R:', 'connecting', true],
-    ['Media Storage', 'media.internal.demo', '/mnt/media', 'M:', 'connected', false],
-    ['Logs Central', 'logs.internal.demo', '/var/log', 'L:', 'disconnected', false],
-    ['Shop Front', 'shop.example.com', '/var/www/shop', 'H:', 'connected', true],
-    ['Archives 2026', 'archive.example.net', '/archives/2026', 'V:', 'disconnected', false],
-    ['Design Assets', 'assets.example.io', '/projects/assets', 'D:', 'connected', true],
-    ['Monitoring', 'monitoring.internal', '/opt/monitoring', 'N:', 'connecting', false],
-    ['Dev Sandbox', 'sandbox.local', '/home/dev/sandbox', 'X:', 'disconnected', true],
-    ['Invoices', 'billing.example.com', '/secure/invoices', 'I:', 'connected', false],
-    ['Legacy Server', 'legacy.example.org', '/srv/legacy', 'G:', 'disconnected', false],
-    ['Team Shared', 'team-share.internal', '/shared/team', 'T:', 'connected', true]
-  ]
-
-  return names.map(([name, host, folder, mountPoint, status, favorite], index) => ({
-    uuid: `demo-connection-${index + 1}`,
-    demo: true,
-    name,
-    host,
-    port: index % 3 === 0 ? 2222 : 22,
-    user: index % 2 === 0 ? 'demo' : 'deploy',
-    folder,
-    mountPoint,
-    preferredMountPoint: mountPoint,
-    authType: index % 4 === 0 ? 'key-file' : 'password',
-    favorite,
-    status,
-    pid: status === 'connected' ? 9000 + index : null,
-    iconDataUrl: null,
-    advanced: {
-      customCmdlOptionsEnabled: false,
-      customCmdlOptions: [],
-      connectOnStartup: index % 5 === 0,
-      reconnect: index % 4 === 0
-    }
-  }))
-}
 
 export default {
   name: 'main-window',
@@ -898,11 +855,6 @@ export default {
     },
 
     dropConnection (uuid) {
-      if (this.appSettings.demoMode) {
-        this.draggedConnectionUuid = null
-        return
-      }
-
       if (!this.draggedConnectionUuid || this.draggedConnectionUuid === uuid) {
         return
       }
@@ -932,10 +884,6 @@ export default {
     },
 
     moveConnection (conn, direction) {
-      if (this.appSettings.demoMode) {
-        return
-      }
-
       const visibleIndex = this.filteredConnections.findIndex(item => item.uuid === conn.uuid)
       const target = this.filteredConnections[visibleIndex + direction]
 
@@ -1261,13 +1209,6 @@ export default {
     },
 
     connect (conn) {
-      if (this.appSettings.demoMode && conn.demo) {
-        conn.status = 'connected'
-        conn.pid = 9000
-        this.selectConnection(conn)
-        return Promise.resolve()
-      }
-
       return new Promise(async resolve => {
         const connToConnect = await this.prepareConnectionForConnect(conn)
 
@@ -1392,12 +1333,6 @@ export default {
     },
 
     async disconnect (conn) {
-      if (this.appSettings.demoMode && conn.demo) {
-        conn.status = 'disconnected'
-        conn.pid = null
-        return
-      }
-
       conn.status = 'disconnecting'
 
       let pid = conn.pid
@@ -1428,20 +1363,12 @@ export default {
     },
 
     openLocal (path) {
-      if (this.appSettings.demoMode) {
-        return
-      }
-
       if (path) {
         ipcRenderer.invoke('shell:open-path', path)
       }
     },
 
     async openTerminal (conn) {
-      if (this.appSettings.demoMode) {
-        return
-      }
-
       if (!conn) {
         return
       }
@@ -1503,19 +1430,11 @@ export default {
     },
 
     editConnection (conn) {
-      if (this.appSettings.demoMode && conn.demo) {
-        return
-      }
-
       this.connectionFormUuid = conn.uuid
       this.connectionFormVisible = true
     },
 
     cloneConnection (conn) {
-      if (this.appSettings.demoMode && conn.demo) {
-        return
-      }
-
       const connCopy = {...conn}
 
       const randName = Math.random().toString(30).substr(-4)
@@ -1530,10 +1449,6 @@ export default {
     },
 
     deleteConnection (conn) {
-      if (this.appSettings.demoMode && conn.demo) {
-        return
-      }
-
       const currentIndex = this.connections.findIndex(item => item.uuid === conn.uuid)
 
       this.$store.dispatch('DELETE_CONNECTION', conn)
@@ -1738,10 +1653,6 @@ export default {
     },
 
     connections () {
-      if (this.appSettings.demoMode) {
-        return this.demoConnections
-      }
-
       return this.$store.state.Data.connections
     },
 
@@ -1852,7 +1763,6 @@ export default {
       sortMode: 'manual',
       searchText: '',
       settingsForm: { ...defaultSettings },
-      demoConnections: createDemoConnections(),
       themeGroups: [
         {
           label: 'Dark',
