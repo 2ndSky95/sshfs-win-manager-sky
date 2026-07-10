@@ -383,7 +383,14 @@ ipcMain.handle('dialog:select-connection-icon', async () => {
 
 ipcMain.handle('app:get-version', () => app.getVersion())
 ipcMain.handle('app:get-login-item-settings', (event, settings) => app.getLoginItemSettings(settings))
-ipcMain.handle('app:set-login-item-settings', (event, settings) => app.setLoginItemSettings(settings))
+ipcMain.handle('app:set-login-item-settings', (event, settings) => {
+  // In dev the login item would point at node_modules electron.exe and boot a bare Electron window.
+  if (!app.isPackaged) {
+    return
+  }
+
+  app.setLoginItemSettings(settings)
+})
 ipcMain.handle('shell:open-path', (event, targetPath) => shell.openPath(targetPath))
 ipcMain.handle('shell:open-external', (event, url) => shell.openExternal(url))
 ipcMain.handle('shell:open-ssh-terminal', (event, payload) => openSshTerminal(payload))
