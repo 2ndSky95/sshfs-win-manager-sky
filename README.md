@@ -2,6 +2,8 @@
 
 A clean, single-window GUI for mounting remote SSH/SFTP folders as local Windows drives with SSHFS.
 
+🌐 **UI languages:** English · Deutsch · Français · Español · Italiano · 中文
+
 **Sky Edition** is a redesign of [SSHFS-Win Manager Evo](https://github.com/emulsion-io/sshfs-win-manager-evo) by Fabrice Simonet, based on the original [SSHFS-Win Manager](https://github.com/evsar3/sshfs-win-manager) by Evandro Araujo.
 
 > **Transparency:** This edition was built in an open AI pair-programming workflow with Claude (Fable 5, Anthropic).
