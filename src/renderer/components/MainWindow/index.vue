@@ -481,6 +481,7 @@ import SecretManager from '@/SecretManager.js'
 import { setLocale } from '@/i18n/index.js'
 import { supportedLocaleOptions } from '@/i18n/locales.js'
 import { defaultSettings, normalizeSettings } from '@/store/SettingsDefaults.js'
+import { stateReady } from '@/store/index.js'
 import { currentPlatform, getConnectionMountPoint } from '@/platform/index.js'
 
 import Icon from '@/components/Icon.vue'
@@ -1960,6 +1961,10 @@ export default {
     })
 
     const runStartupConnections = async () => {
+      // The persisted state loads asynchronously; wait for it so we work
+      // with the final connection list and settings.
+      await stateReady
+
       // Adopt sshfs processes that survived the previous session (crash,
       // forced quit, Windows restart) so the shown status matches reality
       // and we don't run into "mount point in use" on reconnect.

@@ -6,6 +6,31 @@ import modules from './modules/index.js'
 const STORAGE_KEY = 'sshfs-win-manager-evo-state'
 const SYNC_CHANNEL = 'sshfs-win-manager-evo-state-sync'
 
+let resolveStateReady
+const stateReady = new Promise(resolve => {
+  resolveStateReady = resolve
+})
+
+// Connection status/pid only describe the current session; persisting them
+// makes a fresh start show stale "connected" entries from the previous run.
+function stripRuntimeState (state) {
+  if (!state.Data || !Array.isArray(state.Data.connections)) {
+    return state
+  }
+
+  return {
+    ...state,
+    Data: {
+      ...state.Data,
+      connections: state.Data.connections.map(conn => ({
+        ...conn,
+        status: 'disconnected',
+        pid: null
+      }))
+    }
+  }
+}
+
 function mergeState (currentState, savedState) {
   if (!savedState) {
     return currentState
@@ -61,8 +86,11 @@ function createPersistedState () {
     store.dispatch('APPLY_MIGRATIONS')
 
     ipcRenderer.invoke('app-state:load').then(state => {
-      applySavedState(state)
+      applySavedState(state ? stripRuntimeState(state) : state)
       store.dispatch('APPLY_MIGRATIONS')
+      resolveStateReady()
+    }).catch(() => {
+      resolveStateReady()
     })
 
     if (channel) {
@@ -84,9 +112,10 @@ function createPersistedState () {
 
       const serializedState = JSON.stringify(state)
       const plainState = JSON.parse(serializedState)
+      const persistedState = stripRuntimeState(plainState)
 
-      window.localStorage.setItem(STORAGE_KEY, serializedState)
-      ipcRenderer.invoke('app-state:save', plainState).catch(() => {})
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(persistedState))
+      ipcRenderer.invoke('app-state:save', persistedState).catch(() => {})
 
       if (channel) {
         channel.postMessage(plainState)
@@ -94,6 +123,8 @@ function createPersistedState () {
     })
   }
 }
+
+export { stateReady }
 
 export default createStore({
   modules,
