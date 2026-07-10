@@ -98,11 +98,12 @@
           <button
             type="button"
             class="connection-card"
-            :class="{ connected: conn.status === 'connected', expanded: expandedConnectionUuid === conn.uuid, favorite: conn.favorite, editing: showDragGrip }"
+            :class="{ connected: conn.status === 'connected', expanded: expandedConnectionUuid === conn.uuid, favorite: conn.favorite, editing: showDragGrip, 'drop-before': dragOverUuid === conn.uuid && dragOverPosition === 'before', 'drop-after': dragOverUuid === conn.uuid && dragOverPosition === 'after' }"
             :draggable="showDragGrip"
             @click="toggleExpandConnection(conn)"
             @dragstart="dragConnection(conn.uuid)"
-            @dragover.prevent
+            @dragover.prevent="dragOverConnection(conn, $event)"
+            @dragend="clearDragState"
             @drop="dropConnection(conn.uuid)"
           >
             <span v-if="showDragGrip" class="drag-grip">
@@ -826,24 +827,48 @@ export default {
       this.draggedConnectionUuid = uuid
     },
 
+    dragOverConnection (conn, event) {
+      if (!this.draggedConnectionUuid || conn.uuid === this.draggedConnectionUuid) {
+        this.dragOverUuid = null
+        return
+      }
+
+      const rect = event.currentTarget.getBoundingClientRect()
+
+      this.dragOverUuid = conn.uuid
+      this.dragOverPosition = (event.clientY - rect.top) < rect.height / 2 ? 'before' : 'after'
+    },
+
+    clearDragState () {
+      this.draggedConnectionUuid = null
+      this.dragOverUuid = null
+    },
+
     dropConnection (uuid) {
       if (!this.draggedConnectionUuid || this.draggedConnectionUuid === uuid) {
+        this.clearDragState()
         return
       }
 
       const fromIndex = this.connections.findIndex(conn => conn.uuid === this.draggedConnectionUuid)
-      const toIndex = this.connections.findIndex(conn => conn.uuid === uuid)
 
-      if (fromIndex === -1 || toIndex === -1) {
-        this.draggedConnectionUuid = null
+      if (fromIndex === -1) {
+        this.clearDragState()
         return
       }
 
       const items = [...this.connections]
       const dragged = items.splice(fromIndex, 1)[0]
-      items.splice(toIndex, 0, dragged)
+      const targetIndex = items.findIndex(conn => conn.uuid === uuid)
 
-      this.draggedConnectionUuid = null
+      if (targetIndex === -1) {
+        this.clearDragState()
+        return
+      }
+
+      items.splice(targetIndex + (this.dragOverPosition === 'after' ? 1 : 0), 0, dragged)
+
+      this.clearDragState()
       this.sortMode = 'manual'
       this.$store.dispatch('REFRESH_CONNECTIONS', items)
     },
@@ -1739,6 +1764,8 @@ export default {
       listMode: 'none',
       sortMode: 'manual',
       searchText: '',
+      dragOverUuid: null,
+      dragOverPosition: 'before',
       settingsForm: { ...defaultSettings },
       themeGroups: [
         {
@@ -2902,8 +2929,30 @@ export default {
 }
 
 .connection-card.editing {
+  position: relative;
   grid-template-columns: 18px 42px minmax(0, 1fr) auto;
   cursor: grab;
+}
+
+.connection-card.drop-before::before,
+.connection-card.drop-after::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--app-primary);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--app-primary) 60%, transparent);
+  pointer-events: none;
+}
+
+.connection-card.drop-before::before {
+  top: -6px;
+}
+
+.connection-card.drop-after::after {
+  bottom: -6px;
 }
 
 .compact-mode .connection-card.editing {
@@ -2926,6 +2975,10 @@ export default {
 
 .connection-card.editing:hover .drag-grip {
   color: var(--app-primary);
+}
+
+.connection-card.favorite.editing:hover .drag-grip {
+  color: #f7b731;
 }
 
 .quick-actions {
@@ -3051,6 +3104,10 @@ export default {
 .icon-button.favorite.active {
   color: #f7b731;
   background: color-mix(in srgb, #f7b731 16%, transparent);
+}
+
+.round-action.favorite:not(:disabled):hover {
+  box-shadow: 0 3px 10px color-mix(in srgb, #f7b731 30%, transparent);
 }
 
 .detail-panel {
