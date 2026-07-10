@@ -98,13 +98,17 @@
           <button
             type="button"
             class="connection-card"
-            :class="{ connected: conn.status === 'connected', expanded: expandedConnectionUuid === conn.uuid, favorite: conn.favorite }"
-            :draggable="isEditModeEnabled"
+            :class="{ connected: conn.status === 'connected', expanded: expandedConnectionUuid === conn.uuid, favorite: conn.favorite, editing: showDragGrip }"
+            :draggable="showDragGrip"
             @click="toggleExpandConnection(conn)"
             @dragstart="dragConnection(conn.uuid)"
             @dragover.prevent
             @drop="dropConnection(conn.uuid)"
           >
+            <span v-if="showDragGrip" class="drag-grip">
+              <Icon icon="grip"/>
+            </span>
+
             <span class="connection-icon">
               <img v-if="conn.iconDataUrl" :src="conn.iconDataUrl" :alt="conn.name">
               <Icon v-else icon="sshfsFolder"/>
@@ -125,24 +129,6 @@
             </span>
 
             <span class="quick-actions">
-              <span v-if="sortMode === 'manual' && isEditModeEnabled" class="reorder-actions">
-                <button
-                  type="button"
-                  :disabled="!canMoveConnection(conn, -1)"
-                  v-tooltip="$t('list.moveUp')"
-                  @click.stop="moveConnection(conn, -1)"
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  :disabled="!canMoveConnection(conn, 1)"
-                  v-tooltip="$t('list.moveDown')"
-                  @click.stop="moveConnection(conn, 1)"
-                >
-                  ↓
-                </button>
-              </span>
               <span class="connection-state" :class="conn.status || 'disconnected'">{{ $t('status.' + (conn.status || 'disconnected')) }}</span>
               <button
                 type="button"
@@ -859,37 +845,6 @@ export default {
 
       this.draggedConnectionUuid = null
       this.sortMode = 'manual'
-      this.$store.dispatch('REFRESH_CONNECTIONS', items)
-    },
-
-    canMoveConnection (conn, direction) {
-      const visibleIndex = this.filteredConnections.findIndex(item => item.uuid === conn.uuid)
-      const targetIndex = visibleIndex + direction
-
-      return visibleIndex !== -1 && targetIndex >= 0 && targetIndex < this.filteredConnections.length
-    },
-
-    moveConnection (conn, direction) {
-      const visibleIndex = this.filteredConnections.findIndex(item => item.uuid === conn.uuid)
-      const target = this.filteredConnections[visibleIndex + direction]
-
-      if (!target) {
-        return
-      }
-
-      const items = [...this.connections]
-      const fromIndex = items.findIndex(item => item.uuid === conn.uuid)
-      const toIndex = items.findIndex(item => item.uuid === target.uuid)
-
-      if (fromIndex === -1 || toIndex === -1) {
-        return
-      }
-
-      const [moved] = items.splice(fromIndex, 1)
-      items.splice(toIndex, 0, moved)
-
-      this.sortMode = 'manual'
-      this.selectedConnectionUuid = conn.uuid
       this.$store.dispatch('REFRESH_CONNECTIONS', items)
     },
 
@@ -1628,6 +1583,10 @@ export default {
   computed: {
     hasConnections () {
       return this.connections.length > 0
+    },
+
+    showDragGrip () {
+      return this.isEditModeEnabled && this.sortMode === 'manual'
     },
 
     isEditModeEnabled () {
@@ -2847,14 +2806,6 @@ export default {
   gap: 8px;
 }
 
-.connection-meta.has-reorder {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.compact-mode .connection-meta.has-reorder {
-  grid-template-columns: minmax(0, 1fr) auto 8px auto;
-}
-
 .connection-meta > span:first-child,
 .detail-title p {
   color: var(--app-muted);
@@ -2950,37 +2901,31 @@ export default {
   background: #f7b731;
 }
 
-.reorder-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-right: 2px;
+.connection-card.editing {
+  grid-template-columns: 18px 42px minmax(0, 1fr) auto;
+  cursor: grab;
 }
 
-.reorder-actions button {
-  width: 26px;
-  height: 26px;
-  border: 0;
-  border-radius: 7px;
-  color: var(--app-text);
-  background: color-mix(in srgb, var(--app-text) 9%, transparent);
-  cursor: pointer;
-  line-height: 1;
+.compact-mode .connection-card.editing {
+  grid-template-columns: 14px 32px minmax(0, 1fr) auto;
+}
+
+.drag-grip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  font-size: 13px;
+  color: var(--app-muted);
+  cursor: grab;
 }
 
-.reorder-actions button:hover {
-  color: var(--app-primary-text);
-  background: var(--app-primary);
+.drag-grip svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
 }
 
-.reorder-actions button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
+.connection-card.editing:hover .drag-grip {
+  color: var(--app-primary);
 }
 
 .quick-actions {
