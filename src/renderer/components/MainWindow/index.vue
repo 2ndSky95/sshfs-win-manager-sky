@@ -78,11 +78,7 @@
             <Icon icon="pen"/>
           </button>
 
-          <select v-model="sortMode" class="sort-select" @change="handleSortModeChange">
-            <option value="name">A-Z</option>
-            <option value="status">{{ $t('list.sortStatus') }}</option>
-            <option value="manual">{{ $t('list.sortManual') }}</option>
-          </select>
+          <AppSelect v-model="sortMode" class="sort-select" :options="sortOptions" @update:modelValue="handleSortModeChange"/>
         </div>
 
         <div v-if="!hasConnections" class="empty-list">
@@ -289,18 +285,12 @@
 
                 <label class="field">
                   <span>{{ $t('settings.theme') }}</span>
-                  <select v-model="settingsForm.theme" @change="previewTheme(settingsForm.theme)">
-                    <optgroup v-for="group in themeGroups" :key="group.label" :label="group.label">
-                      <option v-for="theme in group.themes" :key="theme.value" :value="theme.value">{{ theme.label }}</option>
-                    </optgroup>
-                  </select>
+                  <AppSelect v-model="settingsForm.theme" :groups="themeSelectGroups" @update:modelValue="previewTheme"/>
                 </label>
 
                 <label class="field compact">
                   <span>{{ $t('settings.language') }}</span>
-                  <select v-model="settingsForm.language" @change="previewLanguage(settingsForm.language)">
-                    <option v-for="locale in localeOptions" :key="locale.value" :value="locale.value">{{ $t(locale.labelKey) }}</option>
-                  </select>
+                  <AppSelect v-model="settingsForm.language" :options="languageOptions" @update:modelValue="previewLanguage"/>
                 </label>
               </div>
 
@@ -356,13 +346,7 @@
               <div class="settings-grid passkey-grid" :class="{ 'is-disabled': !settingsForm.passkeyEnabled }">
                 <label class="field compact">
                   <span>{{ $t('settings.passkeyRetention') }}</span>
-                  <select v-model="settingsForm.passkeyRetention" :disabled="!settingsForm.passkeyEnabled">
-                    <option value="always">{{ $t('settings.passkeyAlways') }}</option>
-                    <option value="1h">{{ $t('settings.passkey1h') }}</option>
-                    <option value="12h">{{ $t('settings.passkey12h') }}</option>
-                    <option value="1d">{{ $t('settings.passkey1d') }}</option>
-                    <option value="2d">{{ $t('settings.passkey2d') }}</option>
-                  </select>
+                  <AppSelect v-model="settingsForm.passkeyRetention" :options="retentionOptions" :disabled="!settingsForm.passkeyEnabled"/>
                 </label>
               </div>
             </div>
@@ -482,6 +466,7 @@ import { setLocale } from '@/i18n/index.js'
 import { supportedLocaleOptions } from '@/i18n/locales.js'
 import { defaultSettings, normalizeSettings } from '@/store/SettingsDefaults.js'
 import { stateReady } from '@/store/index.js'
+import AppSelect from '@/components/AppSelect.vue'
 import { currentPlatform, getConnectionMountPoint } from '@/platform/index.js'
 
 import Icon from '@/components/Icon.vue'
@@ -496,7 +481,8 @@ export default {
 
   components: {
     Icon,
-    AddEditConnectionWindow
+    AddEditConnectionWindow,
+    AppSelect
   },
 
   methods: {
@@ -1656,6 +1642,38 @@ export default {
       return this.$store.state.Data.connections
     },
 
+    sortOptions () {
+      return [
+        { value: 'name', label: 'A-Z' },
+        { value: 'status', label: this.$t('list.sortStatus') },
+        { value: 'manual', label: this.$t('list.sortManual') }
+      ]
+    },
+
+    themeSelectGroups () {
+      return this.themeGroups.map(group => ({
+        label: group.label,
+        options: group.themes
+      }))
+    },
+
+    languageOptions () {
+      return this.localeOptions.map(locale => ({
+        value: locale.value,
+        label: this.$t(locale.labelKey)
+      }))
+    },
+
+    retentionOptions () {
+      return [
+        { value: 'always', label: this.$t('settings.passkeyAlways') },
+        { value: '1h', label: this.$t('settings.passkey1h') },
+        { value: '12h', label: this.$t('settings.passkey12h') },
+        { value: '1d', label: this.$t('settings.passkey1d') },
+        { value: '2d', label: this.$t('settings.passkey2d') }
+      ]
+    },
+
     trayStatus () {
       if (this.trayErrorActive) {
         return 'error'
@@ -2619,8 +2637,7 @@ export default {
   color: var(--app-muted);
 }
 
-.search-box input,
-.sort-select {
+.search-box input {
   width: 100%;
   height: 100%;
   border: 0;
@@ -2634,11 +2651,9 @@ export default {
   color: var(--app-muted);
 }
 
-.sort-select {
+.sort-select :deep(.app-select-trigger) {
   height: 46px;
-  border: 1px solid var(--app-border);
-  border-radius: 8px;
-  padding: 0 12px;
+  font-size: 13px;
   background: color-mix(in srgb, var(--app-bg) 46%, transparent);
 }
 
@@ -2661,7 +2676,6 @@ export default {
   background: var(--app-primary);
 }
 
-.sort-select option,
 .field select option {
   color: var(--app-text);
   background: var(--app-surface-soft);

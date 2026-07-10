@@ -1,11 +1,11 @@
 <template>
   <div class="drive-select" ref="root">
-    <button type="button" class="drive-select-trigger" :class="{ open }" @click="open = !open">
+    <button type="button" class="drive-select-trigger" :class="{ open }" @click="toggle">
       <span :class="{ 'is-used': isUsed(modelValue) }">{{ displayLabel }}</span>
       <svg class="chevron" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
     </button>
 
-    <div v-if="open" class="drive-select-menu">
+    <div v-if="open" class="drive-select-menu" :style="menuStyle">
       <button type="button" class="drive-option auto" :class="{ selected: modelValue === 'auto' }" @click="pick('auto')">
         {{ autoLabel }}
       </button>
@@ -56,7 +56,8 @@ export default {
 
   data () {
     return {
-      open: false
+      open: false,
+      menuStyle: {}
     }
   },
 
@@ -71,6 +72,32 @@ export default {
   },
 
   methods: {
+    toggle () {
+      if (this.open) {
+        this.open = false
+        return
+      }
+
+      // Fixed positioning escapes overflow containers; clamp to the window.
+      const rect = this.$refs.root.getBoundingClientRect()
+      const menuMaxHeight = 300
+      const spaceBelow = window.innerHeight - rect.bottom - 8
+      const openUp = spaceBelow < Math.min(menuMaxHeight, 180) && rect.top > spaceBelow
+
+      this.menuStyle = {
+        position: 'fixed',
+        left: `${Math.round(rect.left)}px`,
+        width: `${Math.round(rect.width)}px`,
+        maxHeight: `${menuMaxHeight}px`,
+        overflow: 'auto',
+        ...(openUp
+          ? { bottom: `${Math.round(window.innerHeight - rect.top + 4)}px`, top: 'auto' }
+          : { top: `${Math.round(rect.bottom + 4)}px` })
+      }
+
+      this.open = true
+    },
+
     pick (value) {
       this.$emit('update:modelValue', value)
       this.open = false
@@ -150,11 +177,7 @@ export default {
 }
 
 .drive-select-menu {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(100% + 4px);
-  z-index: 40;
+  z-index: 100;
   padding: 8px;
   border: 1px solid var(--app-border);
   border-radius: 8px;
