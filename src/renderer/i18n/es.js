@@ -157,6 +157,7 @@ export default {
     pathPlaceholder: 'p. ej. /home/john',
     local: 'Local',
     driveLetter: 'Letra de unidad',
+    driveInUse: 'en uso',
     mountPath: 'Ruta de montaje',
     mountPathPlaceholder: 'p. ej. /home/yo/montajes/servidor',
     selectMountPath: 'Seleccionar carpeta de montaje',

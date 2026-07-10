@@ -157,6 +157,7 @@ export default {
     pathPlaceholder: '例如：/home/john',
     local: '本地',
     driveLetter: '盘符',
+    driveInUse: '已占用',
     mountPath: '挂载路径',
     mountPathPlaceholder: '例如：/home/me/mounts/server',
     selectMountPath: '选择挂载文件夹',

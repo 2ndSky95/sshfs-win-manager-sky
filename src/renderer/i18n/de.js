@@ -157,6 +157,7 @@
     pathPlaceholder: 'z. B. /home/john',
     local: 'Lokal',
     driveLetter: 'Laufwerksbuchstabe',
+    driveInUse: 'belegt',
     mountPath: 'Einhängepfad',
     mountPathPlaceholder: 'z. B. /home/ich/mounts/server',
     selectMountPath: 'Einhängeordner auswählen',

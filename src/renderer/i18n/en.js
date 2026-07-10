@@ -157,6 +157,7 @@
     pathPlaceholder: 'e.g. /home/john',
     local: 'Local',
     driveLetter: 'Drive letter',
+    driveInUse: 'in use',
     mountPath: 'Mount path',
     mountPathPlaceholder: 'e.g. /home/me/mounts/server',
     selectMountPath: 'Select mount folder',

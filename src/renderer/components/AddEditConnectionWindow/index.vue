@@ -92,7 +92,7 @@
             <label>{{ $t('connectionForm.driveLetter') }}</label>
             <select v-model="conn.mountPoint">
               <option value="auto">{{ $t('connectionForm.autoDrive') }}</option>
-              <option v-for="drive in drives" :value="drive + ':'" :key="drive">{{drive}}:</option>
+              <option v-for="drive in drives" :value="drive + ':'" :key="drive" :class="{ 'drive-used': usedDrives.includes(drive) }">{{drive}}:{{ usedDrives.includes(drive) ? ' — ' + $t('connectionForm.driveInUse') : '' }}</option>
             </select>
           </div>
           <div v-else class="form-item">
@@ -134,6 +134,7 @@
 
 <script>
 import { ipcRenderer } from 'electron'
+import { exec } from 'child_process'
 import { v4 as uuid } from 'uuid'
 
 import Tabs from '@/components/Tabs/Tabs.vue'
@@ -170,6 +171,38 @@ export default {
   },
 
   methods: {
+    loadUsedDrives () {
+      const used = new Set()
+
+      // Drive letters taken by other configured connections
+      this.$store.state.Data.connections.forEach(item => {
+        if (item.uuid === this.conn.uuid) {
+          return
+        }
+
+        const mount = item.mountPoint === 'auto' ? item.preferredMountPoint : item.mountPoint
+
+        if (mount && mount !== 'auto') {
+          used.add(String(mount).substr(0, 1).toUpperCase())
+        }
+      })
+
+      // Drive letters currently taken by the system
+      exec('powershell -NoProfile -NonInteractive -Command "Get-PSDrive -PSProvider FileSystem | Select-Object -ExpandProperty Name"', (err, stdout) => {
+        if (!err) {
+          stdout.toString().trim().split(/\r?\n/).forEach(line => {
+            const letter = line.trim().substr(0, 1).toUpperCase()
+
+            if (letter) {
+              used.add(letter)
+            }
+          })
+        }
+
+        this.usedDrives = [...used]
+      })
+    },
+
     closeForm () {
       if (this.embedded) {
         this.$emit('close')
@@ -299,6 +332,7 @@ export default {
 
       title: this.$t('connectionForm.addTitle'),
       drives: 'DEFGHIJKLMNOPQRSTUVWXYZ',
+      usedDrives: [],
       usesDriveLetters: usesDriveLetters(),
 
       conn: {
@@ -363,6 +397,8 @@ export default {
         this.conn.mountPoint = ''
       }
     }
+
+    this.loadUsedDrives()
   }
 }
 </script>
@@ -511,5 +547,9 @@ export default {
     line-height: 1.35;
   }
 
+}
+
+select option.drive-used {
+  color: #f7b731;
 }
 </style>
