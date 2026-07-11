@@ -15,7 +15,7 @@
 
       <div class="details">
         <span class="local-path">
-          {{mountPointLabel}}
+          {{mountPointDisplay}}
         </span>
 
         <span class="sep">•</span>
@@ -57,7 +57,7 @@
 
 <script>
 import Icon from '@/components/Icon.vue'
-import { getConnectionMountPoint } from '@/platform/index.js'
+import { getConnectionMountPoint, shortenPathForDisplay } from '@/platform/index.js'
 
 export default {
   name: 'connection-item',
@@ -108,6 +108,10 @@ export default {
       const mountPoint = getConnectionMountPoint(this.conn)
 
       return mountPoint === 'auto' ? 'Auto' : mountPoint
+    },
+
+    mountPointDisplay () {
+      return shortenPathForDisplay(this.mountPointLabel)
     }
   }
 }

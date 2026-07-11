@@ -291,9 +291,13 @@ class ProcessHandlerLinux {
   isConnectionStartedMessage (data) {
     const output = String(data).toLowerCase()
 
+    // 'authenticated to' / INIT cover FUSE-T sshfs, which never prints the
+    // macFUSE-style messages below.
     return output.includes('server version:') ||
       output.includes('authentication succeeded') ||
-      output.includes('remote_uid =')
+      output.includes('remote_uid =') ||
+      output.includes('authenticated to ') ||
+      output.includes('opcode: init')
   }
 
   getVisibleDebugOutput (data) {

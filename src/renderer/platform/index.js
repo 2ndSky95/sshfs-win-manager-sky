@@ -82,10 +82,21 @@ function getConnectionMountPoint (conn = {}) {
   return conn.mountPoint
 }
 
+function shortenPathForDisplay (value) {
+  const displayPath = String(value || '')
+
+  if (currentPlatform.id !== 'win32' && homeDir && displayPath.startsWith(homeDir + '/')) {
+    return '~' + displayPath.slice(homeDir.length)
+  }
+
+  return displayPath
+}
+
 export {
   currentPlatform,
   getAutoMountPoint,
   getConnectionMountPoint,
   isWindows,
+  shortenPathForDisplay,
   usesDriveLetters
 }

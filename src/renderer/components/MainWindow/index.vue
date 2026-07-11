@@ -463,7 +463,7 @@ import { supportedLocaleOptions } from '@/i18n/locales.js'
 import { defaultSettings, normalizeSettings } from '@/store/SettingsDefaults.js'
 import { stateReady } from '@/store/index.js'
 import AppSelect from '@/components/AppSelect.vue'
-import { currentPlatform, getConnectionMountPoint } from '@/platform/index.js'
+import { currentPlatform, getConnectionMountPoint, shortenPathForDisplay } from '@/platform/index.js'
 
 import Icon from '@/components/Icon.vue'
 import AddEditConnectionWindow from '@/components/AddEditConnectionWindow/index.vue'
@@ -1602,7 +1602,7 @@ export default {
     mountPointLabel (conn) {
       const mountPoint = getConnectionMountPoint(conn)
 
-      return mountPoint === 'auto' ? 'Auto' : (mountPoint || 'Auto')
+      return mountPoint === 'auto' ? 'Auto' : (shortenPathForDisplay(mountPoint) || 'Auto')
     },
 
     statusLabel (conn) {
