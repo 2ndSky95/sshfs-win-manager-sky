@@ -367,7 +367,7 @@
           </div>
         </div>
 
-        <div class="settings-form-actions">
+        <div v-if="settingsFormDirty" class="settings-form-actions">
           <button class="btn cancel-action" type="button" @click="resetSettingsForm">{{ $t('common.cancel') }}</button>
           <button class="btn save-action" type="button" @click="saveSettings">{{ $t('common.save') }}</button>
         </div>
@@ -1620,6 +1620,10 @@ export default {
   },
 
   computed: {
+    settingsFormDirty () {
+      return JSON.stringify(normalizeSettings(this.settingsForm)) !== JSON.stringify(normalizeSettings(this.appSettings))
+    },
+
     platformDisplayName () {
       return currentPlatform.name
     },
