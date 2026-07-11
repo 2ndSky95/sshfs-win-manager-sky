@@ -463,7 +463,7 @@ import { supportedLocaleOptions } from '@/i18n/locales.js'
 import { defaultSettings, normalizeSettings } from '@/store/SettingsDefaults.js'
 import { stateReady } from '@/store/index.js'
 import AppSelect from '@/components/AppSelect.vue'
-import { currentPlatform, getConnectionMountPoint, shortenPathForDisplay } from '@/platform/index.js'
+import { currentPlatform, getConnectionMountPoint, isMountPointActive, shortenPathForDisplay } from '@/platform/index.js'
 
 import Icon from '@/components/Icon.vue'
 import AddEditConnectionWindow from '@/components/AddEditConnectionWindow/index.vue'
@@ -1940,7 +1940,7 @@ export default {
     ProcessManager.on('timeout', conn => {
       const mountPoint = getConnectionMountPoint(conn)
 
-      if (fs.existsSync(mountPoint)) {
+      if (isMountPointActive(mountPoint)) {
         ProcessManager.getLastSpawnedProcess().then(process => {
           let foundConnection = this.connections.find(i => i.pid === process.pid)
 

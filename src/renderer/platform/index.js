@@ -1,3 +1,4 @@
+import fs from 'fs'
 import os from 'os'
 import path from 'path'
 
@@ -84,6 +85,25 @@ function getConnectionMountPoint (conn = {}) {
   return conn.mountPoint
 }
 
+function isMountPointActive (mountPoint) {
+  if (!mountPoint || mountPoint === 'auto') {
+    return false
+  }
+
+  if (currentPlatform.id === 'win32') {
+    // Drive letters only exist while mounted.
+    return fs.existsSync(mountPoint)
+  }
+
+  // On unix the directory always exists; it is only a real mount when it
+  // sits on a different device than its parent.
+  try {
+    return fs.statSync(mountPoint).dev !== fs.statSync(path.dirname(mountPoint)).dev
+  } catch {
+    return false
+  }
+}
+
 function shortenPathForDisplay (value) {
   const displayPath = String(value || '')
 
@@ -98,6 +118,7 @@ export {
   currentPlatform,
   getAutoMountPoint,
   getConnectionMountPoint,
+  isMountPointActive,
   isWindows,
   shortenPathForDisplay,
   usesDriveLetters
