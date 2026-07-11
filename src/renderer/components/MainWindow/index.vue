@@ -308,30 +308,27 @@
                   <span class="toggle-text">{{ $t('settings.blurAddresses') }}</span>
                 </label>
                 <label class="settings-toggle">
-                  <input v-model="settingsForm.showDebugPanel" type="checkbox">
-                  <span class="switch-track"></span>
-                  <span class="toggle-text">{{ $t('settings.showDebugPanel') }}</span>
-                </label>
-                <label class="settings-toggle">
                   <input v-model="settingsForm.compactMode" type="checkbox">
                   <span class="switch-track"></span>
                   <span class="toggle-text">{{ $t('settings.compactMode') }}</span>
+                </label>
+                <label class="settings-toggle">
+                  <input v-model="settingsForm.showDebugPanel" type="checkbox">
+                  <span class="switch-track"></span>
+                  <span class="toggle-text">{{ $t('settings.showDebugPanel') }}</span>
                 </label>
               </div>
             </div>
 
             <div class="settings-section">
               <h2>{{ $t('settings.sectionPasskey') }}</h2>
-              <div class="toggle-list">
+              <div class="toggle-list passkey-row">
                 <label class="settings-toggle">
                   <input v-model="settingsForm.passkeyEnabled" type="checkbox">
                   <span class="switch-track"></span>
                   <span class="toggle-text">{{ $t('settings.passkeyEnabled') }}</span>
                 </label>
-              </div>
-
-              <div class="settings-grid passkey-grid" :class="{ 'is-disabled': !settingsForm.passkeyEnabled }">
-                <label class="field compact">
+                <label class="field compact passkey-retention" :class="{ 'is-disabled': !settingsForm.passkeyEnabled }">
                   <span>{{ $t('settings.passkeyRetention') }}</span>
                   <AppSelect v-model="settingsForm.passkeyRetention" :options="retentionOptions" :disabled="!settingsForm.passkeyEnabled"/>
                 </label>
@@ -3349,6 +3346,10 @@ input[type='number']::-webkit-inner-spin-button {
   gap: 10px;
 }
 
+.compact-mode .toggle-list {
+  grid-template-columns: 1fr;
+}
+
 .compact-mode .passkey-grid .field {
   max-width: 100%;
 }
@@ -3483,6 +3484,11 @@ input[type='number']::-webkit-inner-spin-button {
   border-color: var(--app-primary);
 }
 
+.passkey-retention.is-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
 .toggle-list,
 .settings-actions {
   border: 1px solid var(--app-border);
@@ -3493,9 +3499,11 @@ input[type='number']::-webkit-inner-spin-button {
 
 .toggle-list {
   grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 2px;
 }
 
 .settings-toggle {
