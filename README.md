@@ -1,6 +1,6 @@
 # SSHFS-Win Manager Sky
 
-A clean, single-window GUI for mounting remote SSH/SFTP folders as local Windows drives with SSHFS.
+A clean, single-window GUI for mounting remote SSH/SFTP folders with SSHFS — as drive letters on Windows, as folders under `~/Mounts` on macOS and Linux.
 
 🌐 **UI languages:** English · Deutsch · Français · Español · Italiano · 中文
 
@@ -38,6 +38,8 @@ A clean, single-window GUI for mounting remote SSH/SFTP folders as local Windows
 ## What's different from Evo
 
 Evo modernized the original app; Sky rethinks how it looks and feels:
+
+- **Runs on macOS and Linux.** Building on Evo's multi-OS groundwork: FUSE-T zero-config on macOS (menu bar template icon, LaunchAgent autostart, Finder volumes), XDG autostart and clean mount handling on Linux, auto mount folders under `~/Mounts` that are removed again on disconnect.
 
 - **One window for everything.** Frameless, fixed-size, with a top tab bar and a slim status bar. Connection details, adding and editing all happen inline — no popup windows, no side panels.
 - **Compact mode** for keeping the app docked at the edge of your screen.
@@ -80,21 +82,74 @@ If you prefer convenience over encryption, the passkey can be turned off in Sett
 
 ## Installation
 
+### Windows
+
 **Step 1** — Install [SSHFS-Win](https://github.com/winfsp/sshfs-win) (includes WinFsp). Follow their installation instructions.
 
-**Step 2** — Download the latest installer from [Releases](https://github.com/2ndSky95/sshfs-win-manager-sky/releases) and run it.
+**Step 2** — Download the latest installer (`sshfs-win-manager-sky-setup-*.exe`) from [Releases](https://github.com/2ndSky95/sshfs-win-manager-sky/releases) and run it.
 
 **Step 3** — Add your connections and enjoy!
 
 Coming from Evo? Install Sky, check that your connections are there, then uninstall Evo (otherwise two tray apps run in parallel).
 
+### macOS (Apple Silicon)
+
+**Step 1** — Install [FUSE-T](https://github.com/macos-fuse-t/fuse-t) and its SSHFS build. FUSE-T is kext-less: no system extension approval, no reboot, no security downgrade.
+
+With [Homebrew](https://brew.sh):
+
+```
+brew tap macos-fuse-t/homebrew-cask
+brew install fuse-t
+brew install macos-fuse-t/homebrew-cask/fuse-t-sshfs
+```
+
+Without Homebrew: download the `fuse-t` and `fuse-t-sshfs` `.pkg` installers from the [FUSE-T releases](https://github.com/macos-fuse-t/fuse-t/releases) and double-click both.
+
+> **Note on macFUSE:** the classic macFUSE (kernel extension) also works in principle, but requires kext approval, a reboot and — on Apple Silicon — reduced boot security. FUSE-T needs none of that and is the recommended and default setup; the app looks for it at `/usr/local/bin/sshfs` automatically.
+
+**Step 2** — Download `sshfs-win-manager-sky-v*-arm64.dmg` from [Releases](https://github.com/2ndSky95/sshfs-win-manager-sky/releases), open it and drag the app into **Applications**.
+
+**Step 3** — First launch: the app is not notarized by Apple, so **right-click the app → Open → Open** (only needed once).
+
+**Step 4** — Add your connections. Mounts appear in Finder as regular volumes and live under `~/Mounts/<connection-name>`. With "Start in menu bar" enabled the app registers a LaunchAgent and starts hidden at login.
+
+### Linux
+
+**Step 1** — Install sshfs from your distribution:
+
+```
+# Debian / Ubuntu
+sudo apt install sshfs
+
+# Fedora
+sudo dnf install fuse-sshfs
+
+# Arch
+sudo pacman -S sshfs
+```
+
+**Step 2** — Download a package from [Releases](https://github.com/2ndSky95/sshfs-win-manager-sky/releases):
+
+- `*.AppImage` — distribution-independent: `chmod +x` it and run (needs `libfuse2` on some distros)
+- `*.deb` — Debian/Ubuntu: `sudo apt install ./sshfs-win-manager-sky_*.deb`
+- `*.rpm` — Fedora/openSUSE: `sudo dnf install ./sshfs-win-manager-sky-*.rpm`
+
+**Step 3** — Add your connections. Mounts live under `~/Mounts/<connection-name>` and are unmounted (and the empty folder removed) on disconnect. With "Start in tray" enabled the app writes an XDG autostart entry and starts hidden at login.
+
+> **LXC/containers:** mounting inside a container needs FUSE enabled (`/dev/fuse`). On Proxmox: container Options → Features → FUSE.
+
 ## Build from source
 
 ```
 npm install
-npm run dev        # development with hot reload
-npm run build:win  # NSIS installer in build/
+npm run dev          # development with hot reload
+npm run build:win    # NSIS installer in build/
+npm run build:mac    # dmg + zip (arm64) in build/
+npm run build:linux  # AppImage, deb, rpm in build/
 ```
+
+Tag pushes (`v*`) build all three platforms via GitHub Actions and attach the artifacts to a draft release.
 
 ## Credits & license
 

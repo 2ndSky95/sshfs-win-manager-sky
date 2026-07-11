@@ -386,7 +386,12 @@
           <div class="about-content">
             <p>{{ $t('about.maintainedBy') }}</p>
             <p>{{ $t('about.website') }} <button class="text-link" type="button" @click="openExternal('https://4-sky.de')">4-sky.de</button></p>
-            <p>{{ $t('about.basedOn') }}</p>
+            <p>
+              {{ $t('about.basedOn') }}
+              <button class="text-link" type="button" @click="openExternal('https://www.emulsion.io')">emulsion.io</button>
+              ·
+              <button class="text-link" type="button" @click="openExternal('https://github.com/evsar3/sshfs-win-manager')">evsar3</button>
+            </p>
             <p>{{ $t('about.license') }}</p>
 
             <h2>{{ $t('about.libraries') }}</h2>
