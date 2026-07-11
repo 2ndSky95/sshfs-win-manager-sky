@@ -26,8 +26,10 @@ const platformProfiles = {
   darwin: {
     id: 'darwin',
     name: 'macOS',
-    sshfsBinary: '/opt/homebrew/bin/sshfs',
-    sshfsBinaryAlternatives: ['/usr/local/bin/sshfs', '/usr/bin/sshfs'],
+    // FUSE-T's sshfs (kextless) first; Homebrew macFUSE builds stall on
+    // recent macOS.
+    sshfsBinary: '/usr/local/bin/sshfs',
+    sshfsBinaryAlternatives: ['/opt/homebrew/bin/sshfs', '/usr/bin/sshfs'],
     defaultKeyFile: path.join(homeDir || process.env.HOME || '', '.ssh', 'id_rsa'),
     mountMode: 'path',
     pathListSeparator: ':',
