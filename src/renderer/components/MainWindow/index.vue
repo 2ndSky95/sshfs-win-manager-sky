@@ -280,20 +280,20 @@
                   <AppSelect v-model="settingsForm.language" :options="languageOptions" @update:modelValue="previewLanguage"/>
                 </label>
 
-                <label class="field opacity-row">
-                  <span>{{ $t('settings.windowOpacity') }}</span>
-                  <input
-                    v-model.number="settingsForm.windowOpacity"
-                    type="range"
-                    min="0.2"
-                    max="1"
-                    step="0.05"
-                    @input="previewOpacity(settingsForm.windowOpacity)"
-                  >
-                </label>
               </div>
 
               <div class="toggle-list">
+                <label class="settings-toggle opacity-row">
+                  <span class="toggle-text">{{ $t('settings.windowOpacity') }}</span>
+                  <input
+                    v-model.number="settingsForm.windowOpacity"
+                    type="range"
+                    min="0.5"
+                    max="1"
+                    step="0.01"
+                    @input="previewOpacity(settingsForm.windowOpacity)"
+                  >
+                </label>
                 <label class="settings-toggle">
                   <input v-model="settingsForm.startupWithOS" type="checkbox">
                   <span class="switch-track"></span>
@@ -3505,30 +3505,34 @@ input[type='number']::-webkit-inner-spin-button {
 
 .opacity-row {
   grid-column: 1 / -1;
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center;
-  gap: 14px;
+  cursor: default;
 }
 
-.opacity-row span {
+.opacity-row .toggle-text {
   flex: 0 0 auto;
 }
 
 .opacity-row input[type='range'] {
-  flex: 1;
-  height: 4px;
+  position: static;
+  opacity: 1;
+  pointer-events: auto;
+  flex: 0 0 auto;
+  width: 50%;
+  margin-left: auto;
+  padding: 0;
+  height: 6px;
   appearance: none;
   -webkit-appearance: none;
-  border-radius: 2px;
+  border-radius: 4px;
   background: color-mix(in srgb, var(--app-text) 16%, transparent);
   outline: none;
 }
 
 .opacity-row input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
+  margin: 0;
   border-radius: 50%;
   background: var(--app-primary);
   cursor: pointer;

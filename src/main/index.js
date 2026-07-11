@@ -310,7 +310,7 @@ ipcMain.on('app:quit', () => {
 
 ipcMain.on('main-window:set-opacity', (event, value) => {
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.setOpacity(Math.min(1, Math.max(0.2, Number(value) || 1)))
+    mainWindow.setOpacity(Math.min(1, Math.max(0.5, Number(value) || 1)))
   }
 })
 
