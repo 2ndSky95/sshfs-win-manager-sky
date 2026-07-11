@@ -308,6 +308,12 @@ ipcMain.on('app:quit', () => {
   app.quit()
 })
 
+ipcMain.on('main-window:set-opacity', (event, value) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setOpacity(Math.min(1, Math.max(0.2, Number(value) || 1)))
+  }
+})
+
 ipcMain.on('window:hide-current', event => {
   const win = getSenderWindow(event)
   if (win) win.hide()

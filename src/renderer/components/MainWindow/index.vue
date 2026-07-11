@@ -279,6 +279,18 @@
                   <span>{{ $t('settings.language') }}</span>
                   <AppSelect v-model="settingsForm.language" :options="languageOptions" @update:modelValue="previewLanguage"/>
                 </label>
+
+                <label class="field opacity-row">
+                  <span>{{ $t('settings.windowOpacity') }}</span>
+                  <input
+                    v-model.number="settingsForm.windowOpacity"
+                    type="range"
+                    min="0.2"
+                    max="1"
+                    step="0.05"
+                    @input="previewOpacity(settingsForm.windowOpacity)"
+                  >
+                </label>
               </div>
 
               <div class="toggle-list">
@@ -622,7 +634,12 @@ export default {
       this.settingsForm = normalizeSettings(this.appSettings)
       this.previewTheme(this.settingsForm.theme)
       this.previewLanguage(this.settingsForm.language)
+      this.previewOpacity(this.settingsForm.windowOpacity)
       this.activeSection = 'connections'
+    },
+
+    previewOpacity (value) {
+      ipcRenderer.send('main-window:set-opacity', value)
     },
 
     previewLanguage (language) {
@@ -1875,6 +1892,8 @@ export default {
       // The persisted state loads asynchronously; wait for it so we work
       // with the final connection list and settings.
       await stateReady
+
+      this.previewOpacity(this.appSettings.windowOpacity)
 
       // Adopt sshfs processes that survived the previous session (crash,
       // forced quit, Windows restart) so the shown status matches reality
@@ -3482,6 +3501,38 @@ input[type='number']::-webkit-inner-spin-button {
 .field input:focus,
 .field select:focus {
   border-color: var(--app-primary);
+}
+
+.opacity-row {
+  grid-column: 1 / -1;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 14px;
+}
+
+.opacity-row span {
+  flex: 0 0 auto;
+}
+
+.opacity-row input[type='range'] {
+  flex: 1;
+  height: 4px;
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--app-text) 16%, transparent);
+  outline: none;
+}
+
+.opacity-row input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--app-primary);
+  cursor: pointer;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--app-primary) 40%, transparent);
 }
 
 .passkey-retention.is-disabled {

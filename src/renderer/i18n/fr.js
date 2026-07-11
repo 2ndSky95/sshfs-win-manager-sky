@@ -84,6 +84,7 @@
     sshfsBinary: 'Binaire SSHFS',
     processTimeout: 'Timeout de connexion (sec)',
     theme: 'Thème',
+    windowOpacity: 'Transparence',
     language: 'Langue',
     languageFr: 'Français',
     languageEn: 'English',

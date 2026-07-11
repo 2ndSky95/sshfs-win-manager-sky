@@ -84,6 +84,7 @@ export default {
     sshfsBinary: 'SSHFS 程序路径',
     processTimeout: '连接超时（秒）',
     theme: '主题',
+    windowOpacity: '透明度',
     language: '语言',
     languageFr: 'Français',
     languageEn: 'English',

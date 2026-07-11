@@ -14,6 +14,7 @@ const defaultSettings = {
   passkeyEnabled: true,
   passkeyRetention: '12h',
   theme: 'dark-graphite',
+  windowOpacity: 1,
   language: defaultLocale
 }
 
@@ -33,6 +34,7 @@ function normalizeSettings (settings = {}) {
     passkeyEnabled: typeof settings.passkeyEnabled === 'boolean' ? settings.passkeyEnabled : defaultSettings.passkeyEnabled,
     passkeyRetention: settings.passkeyRetention || defaultSettings.passkeyRetention,
     theme: settings.theme || defaultSettings.theme,
+    windowOpacity: Math.min(1, Math.max(0.2, Number(settings.windowOpacity) || defaultSettings.windowOpacity)),
     language: normalizeLocale(settings.language)
   }
 }

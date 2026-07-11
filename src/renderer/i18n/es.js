@@ -84,6 +84,7 @@ export default {
     sshfsBinary: 'Binario SSHFS',
     processTimeout: 'Timeout de conexión (seg)',
     theme: 'Tema',
+    windowOpacity: 'Transparencia',
     language: 'Idioma',
     languageFr: 'Français',
     languageEn: 'English',

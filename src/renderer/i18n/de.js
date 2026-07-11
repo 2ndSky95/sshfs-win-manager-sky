@@ -84,6 +84,7 @@
     sshfsBinary: 'SSHFS-Programmdatei',
     processTimeout: 'Verbindungs-Timeout (Sek)',
     theme: 'Design',
+    windowOpacity: 'Transparenz',
     language: 'Sprache',
     languageFr: 'Français',
     languageEn: 'English',
