@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, Notification, Tray, clipboard, dialog, ipcMain, nativeTheme, shell } from 'electron'
+import { app, BrowserWindow, Menu, Notification, Tray, clipboard, dialog, ipcMain, nativeImage, nativeTheme, shell } from 'electron'
 import path from 'path'
 import { mkdir, readFile, writeFile, unlink } from 'fs/promises'
 import { existsSync, cpSync } from 'fs'
@@ -134,11 +134,28 @@ function getTrayIconPath (status = 'idle') {
   return path.join(staticPath, `tray-${safeStatus}-${color}.png`)
 }
 
+function getTrayImage (status = 'idle') {
+  if (process.platform !== 'darwin') {
+    return getTrayIconPath(status)
+  }
+
+  // The macOS menu bar renders raw pixels 1:1, so scale down and use a
+  // template image (black + alpha) that adapts to light/dark menu bars.
+  const safeStatus = trayStatuses.includes(status) ? status : 'idle'
+  const image = nativeImage
+    .createFromPath(path.join(staticPath, `tray-${safeStatus}-black.png`))
+    .resize({ width: 18, height: 18 })
+
+  image.setTemplateImage(true)
+
+  return image
+}
+
 function updateTrayIcon (status = currentTrayStatus) {
   currentTrayStatus = trayStatuses.includes(status) ? status : 'idle'
 
   if (tray && !tray.isDestroyed()) {
-    tray.setImage(getTrayIconPath(currentTrayStatus))
+    tray.setImage(getTrayImage(currentTrayStatus))
   }
 }
 
@@ -682,7 +699,7 @@ if (isSecondInstance) {
       })
     }
 
-    tray = new Tray(getTrayIconPath())
+    tray = new Tray(getTrayImage())
 
     const trayMenu = Menu.buildFromTemplate([
       {
