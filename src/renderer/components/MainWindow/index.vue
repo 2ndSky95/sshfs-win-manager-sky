@@ -3517,7 +3517,7 @@ input[type='number']::-webkit-inner-spin-button {
   opacity: 1;
   pointer-events: auto;
   flex: 0 0 auto;
-  width: 50%;
+  width: calc(50% - 20px);
   margin-left: auto;
   padding: 0;
   height: 6px;
