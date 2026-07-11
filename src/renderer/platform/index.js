@@ -21,7 +21,7 @@ const platformProfiles = {
     defaultKeyFile: path.join(homeDir || process.env.HOME || '', '.ssh', 'id_rsa'),
     mountMode: 'path',
     pathListSeparator: ':',
-    autoMountRoot: path.join(homeDir || process.env.HOME || '', 'sshfs-win-manager-evo')
+    autoMountRoot: path.join(homeDir || process.env.HOME || '', 'Mounts')
   },
   darwin: {
     id: 'darwin',
@@ -31,7 +31,7 @@ const platformProfiles = {
     defaultKeyFile: path.join(homeDir || process.env.HOME || '', '.ssh', 'id_rsa'),
     mountMode: 'path',
     pathListSeparator: ':',
-    autoMountRoot: path.join(homeDir || process.env.HOME || '', 'Mounts', 'sshfs-win-manager-evo')
+    autoMountRoot: path.join(homeDir || process.env.HOME || '', 'Mounts')
   }
 }
 
@@ -42,7 +42,7 @@ const currentPlatform = platformProfiles[platform] || {
   defaultKeyFile: path.join(homeDir || '', '.ssh', 'id_rsa'),
   mountMode: 'path',
   pathListSeparator: path.delimiter,
-  autoMountRoot: path.join(homeDir || '', 'sshfs-win-manager-evo')
+  autoMountRoot: path.join(homeDir || '', 'Mounts')
 }
 
 function isWindows () {

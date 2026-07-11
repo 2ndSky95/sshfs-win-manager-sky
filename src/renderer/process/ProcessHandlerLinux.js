@@ -122,12 +122,15 @@ class ProcessHandlerLinux {
 
       const askpass = this.createAskpassScript(conn)
       const binaryDir = sshfsBinary.includes('/') ? dirname(sshfsBinary) : ''
+      // GUI apps inherit a minimal PATH on macOS/Linux; sshfs spawns `ssh` via
+      // PATH, so the standard system dirs must always be present.
+      const systemPath = '/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin'
       const childProcess = spawn(sshfsBinary, cmdArgs, {
         env: {
           ...globalThis.process.env,
-          PATH: binaryDir
-            ? `${binaryDir}${currentPlatform.pathListSeparator}${globalThis.process.env.PATH || ''}`
-            : globalThis.process.env.PATH,
+          PATH: [binaryDir, globalThis.process.env.PATH, systemPath]
+            .filter(Boolean)
+            .join(currentPlatform.pathListSeparator),
           ...(askpass
             ? {
               DISPLAY: globalThis.process.env.DISPLAY || 'sshfs-win-manager',
