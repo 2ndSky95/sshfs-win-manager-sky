@@ -297,12 +297,12 @@
                 <label class="settings-toggle">
                   <input v-model="settingsForm.startupWithOS" type="checkbox">
                   <span class="switch-track"></span>
-                  <span class="toggle-text">{{ $t('settings.startupWithOS') }}</span>
+                  <span class="toggle-text">{{ $t('settings.startupWithOS', { os: platformDisplayName }) }}</span>
                 </label>
                 <label class="settings-toggle" :class="{ 'is-disabled': !settingsForm.startupWithOS }">
                   <input v-model="settingsForm.startInTray" type="checkbox" :disabled="!settingsForm.startupWithOS">
                   <span class="switch-track"></span>
-                  <span class="toggle-text">{{ $t('settings.startInTray') }}</span>
+                  <span class="toggle-text">{{ $t(isMac ? 'settings.startInMenuBar' : 'settings.startInTray') }}</span>
                 </label>
                 <label class="settings-toggle">
                   <input v-model="settingsForm.closeWindowQuits" type="checkbox">
@@ -1620,6 +1620,14 @@ export default {
   },
 
   computed: {
+    platformDisplayName () {
+      return currentPlatform.name
+    },
+
+    isMac () {
+      return currentPlatform.id === 'darwin'
+    },
+
     hasConnections () {
       return this.connections.length > 0
     },

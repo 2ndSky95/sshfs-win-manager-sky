@@ -21,7 +21,7 @@
       </div>
 
       <div class="form-item" style="margin: 10px 0">
-        <SwitchLabel :label="$t('settings.startupWithOS')" v-model="form.startupWithOS"/>
+        <SwitchLabel :label="$t('settings.startupWithOS', { os: platformDisplayName })" v-model="form.startupWithOS"/>
         <SwitchLabel :label="$t('settings.displayTrayMessageOnClose')" v-model="form.displayTrayMessageOnClose"/>
         <SwitchLabel :label="$t('settings.showDebugPanel')" v-model="form.showDebugPanel"/>
       </div>
@@ -59,6 +59,10 @@ export default {
   computed: {
     sshfsBinaryPlaceholder () {
       return currentPlatform.sshfsBinary
+    },
+
+    platformDisplayName () {
+      return currentPlatform.name
     }
   },
 

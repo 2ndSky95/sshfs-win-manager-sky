@@ -1,6 +1,6 @@
 import { app, BrowserWindow, Menu, Notification, Tray, clipboard, dialog, ipcMain, nativeTheme, shell } from 'electron'
 import path from 'path'
-import { mkdir, readFile, writeFile } from 'fs/promises'
+import { mkdir, readFile, writeFile, unlink } from 'fs/promises'
 import { existsSync, cpSync } from 'fs'
 import { spawn, execFile } from 'child_process'
 import { promisify } from 'util'
@@ -42,6 +42,82 @@ const staticPath = app.isPackaged
   : path.join(__dirname, '../../static')
 
 const execFileAsync = promisify(execFile)
+
+// Electron's login items only forward custom args ("--systray") on Windows.
+// macOS gets a LaunchAgent and Linux an XDG autostart entry instead, both
+// carrying the flag themselves.
+function getAutostartFilePath () {
+  if (process.platform === 'darwin') {
+    return path.join(app.getPath('home'), 'Library', 'LaunchAgents', `${appUserModelId}.plist`)
+  }
+
+  return path.join(app.getPath('home'), '.config', 'autostart', 'sshfs-win-manager-sky.desktop')
+}
+
+function getAutostartExecPath () {
+  return process.env.APPIMAGE || process.execPath
+}
+
+async function applyAutostart (openAtLogin, startInTray) {
+  if (isWindows) {
+    app.setLoginItemSettings({
+      openAtLogin,
+      args: startInTray ? ['--systray'] : []
+    })
+    return
+  }
+
+  // Clear any login item registered by older versions via Electron so the
+  // app does not autostart twice.
+  if (process.platform === 'darwin') {
+    app.setLoginItemSettings({ openAtLogin: false })
+  }
+
+  const filePath = getAutostartFilePath()
+
+  if (!openAtLogin) {
+    await unlink(filePath).catch(() => {})
+    return
+  }
+
+  const execPath = getAutostartExecPath()
+  const content = process.platform === 'darwin'
+    ? [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">',
+        '<plist version="1.0">',
+        '<dict>',
+        '  <key>Label</key>',
+        `  <string>${appUserModelId}</string>`,
+        '  <key>ProgramArguments</key>',
+        '  <array>',
+        `    <string>${execPath}</string>`,
+        ...(startInTray ? ['    <string>--systray</string>'] : []),
+        '  </array>',
+        '  <key>RunAtLoad</key>',
+        '  <true/>',
+        '</dict>',
+        '</plist>'
+      ].join('\n')
+    : [
+        '[Desktop Entry]',
+        'Type=Application',
+        `Name=${appName}`,
+        `Exec="${execPath}"${startInTray ? ' --systray' : ''}`,
+        'X-GNOME-Autostart-enabled=true'
+      ].join('\n')
+
+  await mkdir(path.dirname(filePath), { recursive: true })
+  await writeFile(filePath, content, 'utf8')
+}
+
+function getAutostartSettings () {
+  if (isWindows) {
+    return app.getLoginItemSettings()
+  }
+
+  return { openAtLogin: existsSync(getAutostartFilePath()) }
+}
 
 function getAppIconPath () {
   return path.join(staticPath, isWindows ? 'app-icon.ico' : 'app-icon.png')
@@ -392,14 +468,16 @@ ipcMain.handle('dialog:select-connection-icon', async () => {
 })
 
 ipcMain.handle('app:get-version', () => app.getVersion())
-ipcMain.handle('app:get-login-item-settings', (event, settings) => app.getLoginItemSettings(settings))
+ipcMain.handle('app:get-login-item-settings', () => getAutostartSettings())
 ipcMain.handle('app:set-login-item-settings', (event, settings) => {
   // In dev the login item would point at node_modules electron.exe and boot a bare Electron window.
   if (!app.isPackaged) {
     return
   }
 
-  app.setLoginItemSettings(settings)
+  const startInTray = Array.isArray(settings.args) && settings.args.includes('--systray')
+
+  return applyAutostart(settings.openAtLogin !== false, startInTray)
 })
 ipcMain.handle('shell:open-path', (event, targetPath) => shell.openPath(targetPath))
 ipcMain.handle('shell:open-external', (event, url) => shell.openExternal(url))
@@ -580,10 +658,7 @@ if (isSecondInstance) {
       readFile(appStatePath, 'utf8').then(raw => {
         const settings = ((JSON.parse(raw) || {}).Settings || {}).settings || {}
 
-        app.setLoginItemSettings({
-          openAtLogin: settings.startupWithOS !== false,
-          args: settings.startInTray !== false ? ['--systray'] : []
-        })
+        applyAutostart(settings.startupWithOS !== false, settings.startInTray !== false)
       }).catch(() => {})
     }
 
