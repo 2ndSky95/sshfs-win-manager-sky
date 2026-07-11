@@ -83,7 +83,7 @@
         "deb",
         "rpm"
       ],
-      "maintainer": "Fabrice Simonet <fabrice@emulsion.io>"
+      "maintainer": "Sky <info@4-sky.de>"
     },
     "mac": {
       "icon": "build/icons/app-icon.icns",
