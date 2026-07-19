@@ -16,6 +16,7 @@ jobs:
             script: build:win
           - os: macos-latest
             script: build:mac
+            args: --x64 --arm64
           - os: ubuntu-latest
             script: build:linux
 
@@ -32,7 +33,7 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run ${{ matrix.script }} -- --publish never
+        run: npm run ${{ matrix.script }} -- ${{ matrix.args }} --publish never
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
